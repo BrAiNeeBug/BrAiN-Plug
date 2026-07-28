@@ -65,10 +65,10 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-#  domain: .yourdomain
+  domain: .bk-net
 
 #mqtt:
-#  broker: homeassistant.yourdomain
+#  broker: homeassistant.bk-net
 #  id: mqtt_client
 #  username: !secret mqtt_username
 #  password: !secret mqtt_password
@@ -252,14 +252,15 @@ text_sensor:
     update_interval: 30s
     lambda: |-
       if (!id(system_ready))
-        return {"NA"};
+      return {"NA"};
 
       auto now = id(timesrc).now();
       if (!now.is_valid())
-        return {"NA"};
-
+      return {"NA"};
       int elapsed = (int) now.timestamp - id(last_switch_time);
 
+      // Sanity-Check: negativ oder > 10 Jahre -> last_switch_time war ungueltig (0 o.ae.)
+      // dann selbst reparieren statt Muell anzuzeigen
       if (elapsed < 0 || elapsed > 315360000) {
         id(last_switch_time) = (int) now.timestamp;
         global_preferences->sync();
@@ -268,7 +269,6 @@ text_sensor:
 
       int hours = elapsed / 3600;
       int minutes = (elapsed % 3600) / 60;
-
       char buf[16];
       snprintf(buf, sizeof(buf), "%dh %dm", hours, minutes);
       return std::string(buf);
