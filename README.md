@@ -354,7 +354,7 @@ Check:
 
 * WiFi connection
 * SNTP time synchronization
-* TimerMode is not set to OFF
+* TimerMode is not set to ON or FORCE
 * Correct ON/OFF times
 
 ---
@@ -402,4 +402,4 @@ Built with:
 
 # License
 
-Add your preferred license here.
+BrAiNPubLicense(OpenSOurce, FFA) 2026 by BrAiNee
