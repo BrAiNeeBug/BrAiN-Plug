@@ -67,7 +67,7 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  domain: .bk-net
+#  domain: .yourdomain
 
 #mqtt:
 #  broker: homeassistant.yourdomain
