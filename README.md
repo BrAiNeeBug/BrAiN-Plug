@@ -19,6 +19,7 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 * Normal timer mode
 * Timer enable/disable
 * Runtime counter with power-loss recovery
+* Optional HLW8012 / BL0937 power monitoring
 * Local ESPHome web interface
 * OTA firmware updates
 * No MQTT required
@@ -41,7 +42,7 @@ Adding support for additional ESP8266 based smart plugs is easy by creating a de
 
 BrAiN Plug uses a modular ESPHome configuration.
 
-The device specific configuration includes the hardware pins and loads the common firmware package.
+The device specific configuration contains the hardware pin definitions and loads the common firmware packages.
 
 ## Example configuration (BSD-33)
 
@@ -146,7 +147,165 @@ When the device is connected to WiFi:
 esphome run base_brainplug.yaml
 ```
 
-ESPHome will automatically detect the device and upload the new firmware.
+ESPHome automatically detects the device and uploads the new firmware.
+
+---
+
+# Power Meter Configuration
+
+BrAiN Plug supports optional power measurement using the HLW8012 / BL0937 energy monitoring chip.
+
+The power meter functionality is separated into an additional ESPHome package:
+
+```
+pwrmeter_brainplug.yaml
+```
+
+To enable power measurement, include the package in your device configuration:
+
+```yaml
+packages:
+  base: !include base_brainplug.yaml
+  power: !include pwrmeter_brainplug.yaml
+```
+
+The required GPIO pins and calibration values must be defined in the device configuration.
+
+Example:
+
+```yaml
+substitutions:
+  sel_pin: GPIO12
+  cf_pin: GPIO4
+  cf1_pin: GPIO5
+
+  voltage_divider: "1534"
+  current_resistor: "0.000994"
+```
+
+> Calibration values depend on the hardware design of the smart plug.
+> Different models may require different values.
+
+---
+
+## Available Power Sensors
+
+When enabled, the following sensors are available:
+
+### Voltage
+
+Shows the current mains voltage.
+
+Example:
+
+```
+230.5 V
+```
+
+---
+
+### Current
+
+Shows the current load current.
+
+Example:
+
+```
+3.15 A
+```
+
+---
+
+### Power
+
+Shows the current power consumption.
+
+Example:
+
+```
+725 W
+```
+
+---
+
+### TotalEnergy
+
+Shows accumulated energy consumption.
+
+Example:
+
+```
+12.45 kWh
+```
+
+---
+
+## Power Meter Configuration Example
+
+`pwrmeter_brainplug.yaml`
+
+```yaml
+sensor:
+  - platform: hlw8012
+    model: bl0937
+
+    sel_pin:
+      number: ${sel_pin}
+      inverted: true
+
+    cf_pin: ${cf_pin}
+    cf1_pin: ${cf1_pin}
+
+    voltage_divider: ${voltage_divider}
+    current_resistor: ${current_resistor}Ω
+
+    voltage:
+      name: Voltage(V)
+      web_server:
+        sorting_weight: 10
+
+    current:
+      name: Current(A)
+      web_server:
+        sorting_weight: 11
+
+    power:
+      name: Power(W)
+      web_server:
+        sorting_weight: 12
+
+    energy:
+      name: TotalEnergy
+      web_server:
+        sorting_weight: 13
+
+    update_interval: 10s
+```
+
+---
+
+## Power Meter Calibration
+
+The HLW8012 / BL0937 calibration values should be adjusted using a reliable multimeter or power meter.
+
+Typical calibration procedure:
+
+1. Connect a known load.
+2. Compare displayed voltage/current/power values.
+3. Adjust:
+
+   * `voltage_divider` for voltage accuracy
+   * `current_resistor` for current accuracy
+4. Repeat until the values match.
+
+Example:
+
+```yaml
+voltage_divider: "2050"
+current_resistor: "0.00121"
+```
+
+> Incorrect calibration can result in incorrect power and energy measurements.
 
 ---
 
@@ -162,11 +321,11 @@ Restores the previous relay state.
 
 ### Always ON
 
-Relay will turn on after boot.
+Relay turns on after boot.
 
 ### Always OFF
 
-Relay will turn off after boot.
+Relay turns off after boot.
 
 ---
 
@@ -330,9 +489,9 @@ preferences:
   flash_write_interval: 30s
 ```
 
-Normal ESPHome preference writes are delayed.
+Normal ESPHome preference writes remain delayed.
 
-The important runtime timestamp is stored immediately after relay changes to prevent losing the runtime information after unexpected power loss.
+The important runtime timestamp is stored immediately after relay changes to prevent losing runtime information after unexpected power loss.
 
 ---
 
@@ -354,7 +513,7 @@ Check:
 
 * WiFi connection
 * SNTP time synchronization
-* TimerMode is not set to ON or FORCE
+* TimerMode is not set to OFF
 * Correct ON/OFF times
 
 ---
@@ -402,5 +561,8 @@ Built with:
 
 # License
 
-* BrAiNPub_OSO_FFA
-* (c)2026 by BrAiNee
+```
+BrAiNPub_OSO_FFA
+
+(c)2026 by BrAiNee
+```
