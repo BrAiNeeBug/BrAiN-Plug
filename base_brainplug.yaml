@@ -65,6 +65,13 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
+#  domain: .yourdomain #add your domain here for easy updates...
+
+#mqtt: #if you wanna use mqtt uncomment below...
+#  broker: homeassistant.yourdomain
+#  id: mqtt_client
+#  username: !secret mqtt_username
+#  password: !secret mqtt_password
 
 captive_portal:
 
