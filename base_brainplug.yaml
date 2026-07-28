@@ -7,7 +7,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.0.5
+  comment: BrAiN_Plug_1.0.6
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -19,18 +19,11 @@ esphome:
           } else if (id(power_mode) == 2) {
             id(relay).turn_off();
           }
-          // Mode 0 = Last State: nothing to do, restore_mode already handled it
-
-          // last_switch_time nur bei echtem Power-Loss auf 0 zuruecksetzen.
-          // RTC-User-Memory ueberlebt einen Soft-Reboot (SRAM bleibt bestehen),
-          // wird aber bei echtem Stromausfall mitgeloescht.
           uint32_t rtc_data[2];
           ESP.rtcUserMemoryRead(0, rtc_data, sizeof(rtc_data));
           if (rtc_data[0] == 0xC0FFEE42) {
-            // RTC-RAM intakt -> Soft-Reboot, alten Wert uebernehmen
             id(last_switch_time) = (int) rtc_data[1];
           } else {
-            // RTC-RAM leer/ungueltig -> echter Power-Loss
             id(last_switch_time) = 0;
             global_preferences->sync();
             rtc_data[0] = 0xC0FFEE42;
@@ -55,7 +48,7 @@ globals:
   - id: timer_mode
     type: int
     restore_value: true
-    initial_value: "2"
+    initial_value: "0"
   - id: last_switch_time
     type: int
     restore_value: true
@@ -77,7 +70,7 @@ wifi:
   domain: .bk-net
 
 #mqtt:
-#  broker: homeassistant.bk-net
+#  broker: homeassistant.yourdomain
 #  id: mqtt_client
 #  username: !secret mqtt_username
 #  password: !secret mqtt_password
@@ -127,9 +120,9 @@ select:
     on_value:
       then:
         - lambda: |
-            if (x == "Normal") id(timer_mode) = 0;
+            if (x == "OFF") id(timer_mode) = 0;
             else if (x == "Force") id(timer_mode) = 1;
-            else if (x == "OFF") id(timer_mode) = 2;
+            else if (x == "Normal") id(timer_mode) = 2;
     web_server:
       sorting_weight: 3
 
@@ -193,8 +186,8 @@ interval:
 
           should_be_on = (elapsed < duration);
 
-          if (id(timer_mode) == 2) {
-            // OFF -> Timer komplett deaktiviert
+          if (id(timer_mode) == 0) {
+            // OFF
             return;
           }
 
@@ -204,7 +197,8 @@ interval:
               id(relay).turn_on();
             else
               id(relay).turn_off();
-          } else {
+          } 
+          if (id(timer_mode) == 2) {
             // Normal
             if (now.hour == on_t.hour && now.minute == on_t.minute && now.second < 10) {
               id(relay).turn_on();
@@ -250,9 +244,6 @@ text_sensor:
       auto now = id(timesrc).now();
       if (!now.is_valid()) return {"NA"};
       int elapsed = (int) now.timestamp - id(last_switch_time);
-
-      // Sanity-Check: negativ oder > 10 Jahre -> last_switch_time war ungueltig (0 o.ae.)
-      // dann selbst reparieren statt Muell anzuzeigen
       if (elapsed < 0 || elapsed > 315360000) {
         id(last_switch_time) = (int) now.timestamp;
         global_preferences->sync();
