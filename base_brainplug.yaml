@@ -7,7 +7,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.0.7
+  comment: BrAiN_Plug_1.0.9
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -15,17 +15,24 @@ esphome:
     then:
       - lambda: |-
           if (id(power_mode) == 1) {
-            id(relay).turn_on();
+            if (!id(relay).state) id(relay).turn_on();
           } else if (id(power_mode) == 2) {
-            id(relay).turn_off();
+            if (id(relay).state) id(relay).turn_off();
+          } else {
+            // Last State: nicht auf ESPHomes impliziten restore_mode verlassen,
+            // sondern explizit aus unserem eigenen Global setzen
+            if (id(relay_state) == 1) {
+              if (!id(relay).state) id(relay).turn_on();
+            } else {
+              if (id(relay).state) id(relay).turn_off();
+            }
           }
           uint32_t rtc_data[2];
           ESP.rtcUserMemoryRead(0, rtc_data, sizeof(rtc_data));
-          if (rtc_data[0] == 0xC0FFEE42) {
+          if (rtc_data[0] == 0xC0FFEE42 && rtc_data[1] > 1700000000) {
             id(last_switch_time) = (int) rtc_data[1];
           } else {
             id(last_switch_time) = 0;
-            global_preferences->sync();
             rtc_data[0] = 0xC0FFEE42;
             rtc_data[1] = 0;
             ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
@@ -50,6 +57,10 @@ globals:
     restore_value: true
     initial_value: "0"
   - id: last_switch_time
+    type: int
+    restore_value: true
+    initial_value: "0"
+  - id: relay_state
     type: int
     restore_value: true
     initial_value: "0"
@@ -244,9 +255,8 @@ text_sensor:
       auto now = id(timesrc).now();
       if (!now.is_valid()) return {"NA"};
       int elapsed = (int) now.timestamp - id(last_switch_time);
+
       if (elapsed < 0 || elapsed > 315360000) {
-        id(last_switch_time) = (int) now.timestamp;
-        global_preferences->sync();
         elapsed = 0;
       }
 
@@ -320,16 +330,34 @@ switch:
     restore_mode: RESTORE_DEFAULT_OFF
     on_turn_on:
       - lambda: |-
-          id(last_switch_time) = (int) id(timesrc).now().timestamp;
+          id(relay_state) = 1;
+          auto now = id(timesrc).now();
+          if (now.is_valid()) {
+            id(last_switch_time) = (int) now.timestamp;
+
+            uint32_t rtc_data[2] = {
+              0xC0FFEE42,
+              (uint32_t) id(last_switch_time)
+            };
+
+            ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
+          }
           global_preferences->sync();
-          uint32_t rtc_data[2] = {0xC0FFEE42, (uint32_t) id(last_switch_time)};
-          ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
     on_turn_off:
       - lambda: |-
-          id(last_switch_time) = (int) id(timesrc).now().timestamp;
+          id(relay_state) = 0;
+          auto now = id(timesrc).now();
+          if (now.is_valid()) {
+            id(last_switch_time) = (int) now.timestamp;
+
+            uint32_t rtc_data[2] = {
+              0xC0FFEE42,
+              (uint32_t) id(last_switch_time)
+            };
+
+            ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
+          }
           global_preferences->sync();
-          uint32_t rtc_data[2] = {0xC0FFEE42, (uint32_t) id(last_switch_time)};
-          ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
     web_server:
       sorting_weight: 1
 
