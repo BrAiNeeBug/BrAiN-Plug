@@ -402,6 +402,5 @@ Built with:
 
 # License
 
-BrAiNPub_OSO_FFA
-
-(c)2026 by BrAiNee
+* BrAiNPub_OSO_FFA
+* (c)2026 by BrAiNee
