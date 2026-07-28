@@ -7,7 +7,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.0.9
+  comment: BrAiN_Plug_1.1.0
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -78,7 +78,7 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  #domain: .yourdomain
+  domain: .bk-net
 
 #mqtt:
 #  broker: homeassistant.yourdomain
@@ -182,6 +182,11 @@ interval:
           int now_min = now.hour * 60 + now.minute;
           int on_min  = on_t.hour * 60 + on_t.minute;
           int off_min = off_t.hour * 60 + off_t.minute;
+
+          if (on_min == off_min) {
+            // On-time equals off-time (e.g. 00:00-00:00) -> treat like TimerMode OFF, no switching
+            return;
+          }
 
           bool should_be_on;
 
