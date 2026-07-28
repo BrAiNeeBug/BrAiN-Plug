@@ -17,9 +17,7 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 * ESP8266 / ESP8285 support
 * Persistent relay state handling
 * Power recovery modes
-* Daily ON/OFF timer scheduling
-* Auto timer mode
-* Single timer mode
+* Daily ON/OFF timer scheduling with Auto and Single modes
 * Timer enable/disable
 * Runtime counter with power-loss recovery
 * Optional HLW8012 / BL0937 power monitoring
@@ -260,7 +258,7 @@ sensor:
     cf1_pin: ${cf1_pin}
 
     voltage_divider: ${voltage_divider}
-    current_resistor: ${current_resistor}Ω
+    current_resistor: ${current_resistor}
 
     voltage:
       name: Voltage(V)
@@ -340,26 +338,6 @@ Timer functionality disabled.
 
 ---
 
-## Single
-
-The relay switches exactly at the configured ON and OFF times.
-
-Example:
-
-```
-ON   06:00
-OFF  22:00
-```
-
-Result:
-
-```
-06:00 -> Relay ON
-22:00 -> Relay OFF
-```
-
----
-
 ## Auto
 
 The firmware continuously checks the current time and enforces the correct relay state.
@@ -383,6 +361,26 @@ This mode is useful when the device loses power during an active timer period.
 
 ---
 
+## Single
+
+The relay switches exactly at the configured ON and OFF times.
+
+Example:
+
+```
+ON   06:00
+OFF  22:00
+```
+
+Result:
+
+```
+06:00 -> Relay ON
+22:00 -> Relay OFF
+```
+
+---
+
 # Runtime Tracking
 
 The sensor:
@@ -400,7 +398,9 @@ last_switch_time:
   restore_value: true
 ```
 
-After a power outage the runtime continues correctly.
+After a reboot the runtime information is restored when RTC memory is available.
+
+After a complete power loss, runtime tracking starts again after the next relay state change.
 
 The firmware immediately saves relay changes:
 
@@ -536,12 +536,6 @@ shows a valid time.
 ---
 
 # Project Information
-
-Firmware:
-
-```
-BrAiN Plug 1.0.4
-```
 
 Platform:
 
