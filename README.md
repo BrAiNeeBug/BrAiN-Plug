@@ -402,4 +402,5 @@ Built with:
 
 # License
 
-BrAiNPubLicense(OpenSOurce, FFA) 2026 by BrAiNee
+BrAiNPub_OSO_FFA
+(c)2026 by BrAiNee
