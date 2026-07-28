@@ -2,6 +2,7 @@
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-BrAiNPub_OSO_FFA-green.svg)]()
+
 ESPHome based smart plug firmware for ESP8266.
 
 BrAiN Plug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible ESP8266 smart plugs.
