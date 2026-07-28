@@ -6,6 +6,5 @@ Features:
 - Safety features for the TimerDuration (restore/save relay time and timer force operation)
 - PowerLoss and Flash restore features
 
-- Supported Devices:
-- S-20, BSD-33, EU3S
-- you can easely add more Devices !
+Supported Devices:
+- S-20, BSD-33, EU3S (you can easely add more Devices !)
