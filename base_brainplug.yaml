@@ -7,7 +7,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.0.4
+  comment: BrAiN_Plug_1.0.5
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -21,9 +21,22 @@ esphome:
           }
           // Mode 0 = Last State: nothing to do, restore_mode already handled it
 
-          // last_switch_time wird automatisch von ESPHome aus dem Flash
-          // wiederhergestellt (restore_value: true) - egal ob Soft-Reboot
-          // oder echter Stromausfall. Keine RTC-Tricks noetig.
+          // last_switch_time nur bei echtem Power-Loss auf 0 zuruecksetzen.
+          // RTC-User-Memory ueberlebt einen Soft-Reboot (SRAM bleibt bestehen),
+          // wird aber bei echtem Stromausfall mitgeloescht.
+          uint32_t rtc_data[2];
+          ESP.rtcUserMemoryRead(0, rtc_data, sizeof(rtc_data));
+          if (rtc_data[0] == 0xC0FFEE42) {
+            // RTC-RAM intakt -> Soft-Reboot, alten Wert uebernehmen
+            id(last_switch_time) = (int) rtc_data[1];
+          } else {
+            // RTC-RAM leer/ungueltig -> echter Power-Loss
+            id(last_switch_time) = 0;
+            global_preferences->sync();
+            rtc_data[0] = 0xC0FFEE42;
+            rtc_data[1] = 0;
+            ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
+          }
 
 preferences:
   flash_write_interval: 30s
@@ -35,10 +48,6 @@ esp8266:
   early_pin_init: false
 
 globals:
-  - id: system_ready
-    type: bool
-    restore_value: false
-    initial_value: "false"
   - id: power_mode
     type: int
     restore_value: true
@@ -136,19 +145,6 @@ time:
   - platform: sntp
     id: timesrc
 
-    on_time_sync:
-      then:
-        - delay: 5s
-        - lambda: |-
-            id(system_ready) = true;
-
-            // Falls der Zeitstempel noch leer war, initialisieren
-            if (id(last_switch_time) <= 0) {
-              id(last_switch_time) = (int) id(timesrc).now().timestamp;
-            }
-
-            ESP_LOGI("timer", "System ready.");
-
 datetime:
   - platform: template
     type: TIME
@@ -173,29 +169,29 @@ interval:
   - interval: 10s
     then:
       - lambda: |
-          if (!id(system_ready))
-          return;
-
           auto now = id(timesrc).now();
-          if (!now.is_valid())
-          return;
+          if (!now.is_valid()) return;
 
-          auto on_t = id(on_time_setting).state_as_esptime();
+          auto on_t  = id(on_time_setting).state_as_esptime();
           auto off_t = id(off_time_setting).state_as_esptime();
-
-          if (!on_t.is_valid() || !off_t.is_valid())
-          return;
 
           int now_min = now.hour * 60 + now.minute;
           int on_min  = on_t.hour * 60 + on_t.minute;
           int off_min = off_t.hour * 60 + off_t.minute;
 
           bool should_be_on;
-          if (on_min <= off_min) {
-            should_be_on = (now_min >= on_min && now_min < off_min);
-          } else {
-            should_be_on = (now_min >= on_min || now_min < off_min);
+
+          int duration = off_min - on_min;
+          if (duration <= 0) {
+            duration += 24 * 60;
           }
+
+          int elapsed = now_min - on_min;
+          if (elapsed < 0) {
+            elapsed += 24 * 60;
+          }
+
+          should_be_on = (elapsed < duration);
 
           if (id(timer_mode) == 2) {
             // OFF -> Timer komplett deaktiviert
@@ -251,12 +247,8 @@ text_sensor:
     id: relay_duration_display
     update_interval: 30s
     lambda: |-
-      if (!id(system_ready))
-      return {"NA"};
-
       auto now = id(timesrc).now();
-      if (!now.is_valid())
-      return {"NA"};
+      if (!now.is_valid()) return {"NA"};
       int elapsed = (int) now.timestamp - id(last_switch_time);
 
       // Sanity-Check: negativ oder > 10 Jahre -> last_switch_time war ungueltig (0 o.ae.)
@@ -282,17 +274,12 @@ text_sensor:
     lambda: |-
       auto on_t = id(on_time_setting).state_as_esptime();
       auto off_t = id(off_time_setting).state_as_esptime();
-
       int on_min = on_t.hour * 60 + on_t.minute;
       int off_min = off_t.hour * 60 + off_t.minute;
-
       int duration = off_min - on_min;
-      if (duration < 0)
-        duration += 24 * 60;
-
-      char buf[16];
-      snprintf(buf, sizeof(buf), "%.1fh", duration / 60.0);
-
+      if (duration < 0) duration += 24 * 60;
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%.1fh", floor(duration / 60.0 * 10) / 10.0);
       return std::string(buf);
     web_server:
       sorting_weight: 5
@@ -304,17 +291,12 @@ text_sensor:
     lambda: |-
       auto on_t = id(on_time_setting).state_as_esptime();
       auto off_t = id(off_time_setting).state_as_esptime();
-
       int on_min = on_t.hour * 60 + on_t.minute;
       int off_min = off_t.hour * 60 + off_t.minute;
-
       int duration = on_min - off_min;
-      if (duration < 0)
-        duration += 24 * 60;
-
-      char buf[16];
-      snprintf(buf, sizeof(buf), "%.1fh", duration / 60.0);
-
+      if (duration < 0) duration += 24 * 60;
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%.1fh", floor(duration / 60.0 * 10) / 10.0);
       return std::string(buf);
     web_server:
       sorting_weight: 7
@@ -347,18 +329,16 @@ switch:
     restore_mode: RESTORE_DEFAULT_OFF
     on_turn_on:
       - lambda: |-
-          auto now = id(timesrc).now();
-          if (id(system_ready) && now.is_valid()) {
-          id(last_switch_time) = (int) now.timestamp;
+          id(last_switch_time) = (int) id(timesrc).now().timestamp;
           global_preferences->sync();
-          }
+          uint32_t rtc_data[2] = {0xC0FFEE42, (uint32_t) id(last_switch_time)};
+          ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
     on_turn_off:
       - lambda: |-
-          auto now = id(timesrc).now();
-          if (id(system_ready) && now.is_valid()) {
-          id(last_switch_time) = (int) now.timestamp;
+          id(last_switch_time) = (int) id(timesrc).now().timestamp;
           global_preferences->sync();
-          }
+          uint32_t rtc_data[2] = {0xC0FFEE42, (uint32_t) id(last_switch_time)};
+          ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
     web_server:
       sorting_weight: 1
 
