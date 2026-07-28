@@ -65,13 +65,6 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  domain: .bk-net
-
-#mqtt:
-#  broker: homeassistant.bk-net
-#  id: mqtt_client
-#  username: !secret mqtt_username
-#  password: !secret mqtt_password
 
 captive_portal:
 
