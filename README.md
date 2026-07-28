@@ -18,8 +18,8 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 * Persistent relay state handling
 * Power recovery modes
 * Daily ON/OFF timer scheduling
-* Force timer mode
-* Normal timer mode
+* Auto timer mode
+* Single timer mode
 * Timer enable/disable
 * Runtime counter with power-loss recovery
 * Optional HLW8012 / BL0937 power monitoring
@@ -340,7 +340,7 @@ Timer functionality disabled.
 
 ---
 
-## Normal
+## Single
 
 The relay switches exactly at the configured ON and OFF times.
 
@@ -360,7 +360,7 @@ Result:
 
 ---
 
-## Force
+## Auto
 
 The firmware continuously checks the current time and enforces the correct relay state.
 
