@@ -1,0 +1,15 @@
+substitutions:
+  device_name: sonoffs20
+  friendly_name: sonoffs20
+  board_type: esp01_1m
+  relay_pin: GPIO12
+  led_pin: GPIO13
+  button_pin: GPIO0
+
+packages:
+  base: !include base_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret sonoffs20__encryption_key
+  reboot_timeout: 0s

@@ -1,0 +1,27 @@
+sensor:
+  - platform: hlw8012
+    model: bl0937
+    sel_pin:
+      number: ${sel_pin}
+      inverted: true
+    cf_pin: ${cf_pin}
+    cf1_pin: ${cf1_pin}
+    voltage_divider: ${voltage_divider}
+    current_resistor: ${current_resistor}Ω
+    voltage:
+      name: Voltage(V)
+      web_server:
+        sorting_weight: 10
+    current:
+      name: Current(A)
+      web_server:
+        sorting_weight: 11
+    power:
+      name: Power(W)
+      web_server:
+        sorting_weight: 12
+    energy:
+      name: TotalEnergy
+      web_server:
+        sorting_weight: 13
+    update_interval: 10s

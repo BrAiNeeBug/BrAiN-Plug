@@ -1,0 +1,21 @@
+substitutions:
+  device_name: bsd33
+  friendly_name: bsd33
+  board_type: esp8285
+  relay_pin: GPIO14
+  led_pin: GPIO13
+  button_pin: GPIO3
+  sel_pin: GPIO12
+  cf_pin: GPIO4
+  cf1_pin: GPIO5
+  voltage_divider: "1534"
+  current_resistor: "0.000994"
+
+packages:
+  base: !include base_brainplug.yaml
+  power: !include pwrmeter_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret bsd33__encryption_key
+  reboot_timeout: 0s
