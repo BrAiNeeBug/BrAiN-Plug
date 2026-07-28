@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weekly Schedule Builder</title>
+<style>
+  :root{
+    --bg: #14171a;
+    --panel: #1b2126;
+    --panel2: #20272d;
+    --border: #2a3138;
+    --text: #e6e9ec;
+    --muted: #838d97;
+    --accent: #ff8a3d;
+    --accent-dim: #7a4a26;
+    --ok: #4ade80;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:24px;
+    background:var(--bg); color:var(--text);
+    font-family:var(--sans);
+    display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:720px; }
+  h1{
+    font-size:19px; font-weight:700; letter-spacing:0.2px;
+    margin:0 0 2px 0;
+  }
+  .subtitle{
+    color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.5;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .panel-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--muted); margin:0 0 12px 0; font-weight:600;
+  }
+
+  /* --- grid --- */
+  .grid-scroll{ overflow-x:auto; }
+  .grid-outer{
+    display:grid;
+    grid-template-columns: 34px repeat(7, 1fr);
+    min-width:480px;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:none;
+  }
+  .day-label{
+    font-size:11px; color:var(--muted); text-align:center;
+    padding-bottom:6px; font-weight:600;
+  }
+  .hour-label{
+    font-size:10px; color:var(--muted); font-family:var(--mono);
+    text-align:right; padding-right:6px; line-height:16px; height:16px;
+  }
+  .cell{
+    height:16px;
+    border:1px solid var(--border);
+    background: var(--panel2);
+    margin:-0.5px;
+    cursor:pointer;
+    transition: background 60ms linear;
+  }
+  .cell.active{
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 6px 0 rgba(255,138,61,0.55);
+  }
+  .cell:hover:not(.active){
+    background: #2c343b;
+  }
+  .hint{
+    font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5;
+  }
+  .row-actions{
+    display:flex; gap:8px; margin-top:12px;
+  }
+
+  /* --- buttons / inputs --- */
+  button{
+    font-family:var(--sans);
+    font-size:13px; font-weight:600;
+    border-radius:7px; border:1px solid var(--border);
+    padding:8px 14px; cursor:pointer;
+    background:var(--panel2); color:var(--text);
+  }
+  button:hover{ border-color:#3a434c; }
+  button.primary{
+    background:var(--accent); border-color:var(--accent); color:#1a1204;
+  }
+  button.primary:hover{ filter:brightness(1.08); }
+  button:active{ transform: translateY(1px); }
+
+  textarea, input[type=text]{
+    width:100%;
+    font-family:var(--mono); font-size:12.5px;
+    background:var(--panel2); color:var(--text);
+    border:1px solid var(--border); border-radius:7px;
+    padding:10px; resize:vertical;
+  }
+  textarea{ height:64px; }
+
+  .field-row{ display:flex; gap:8px; align-items:center; margin-top:10px; }
+  .field-row input{ flex:1; }
+
+  .status{ font-size:12px; margin-top:8px; min-height:16px; }
+  .status.ok{ color:var(--ok); }
+  .status.err{ color:#f87171; }
+
+  .legend{
+    display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); margin-top:10px;
+  }
+  .swatch{ width:11px; height:11px; border-radius:2px; border:1px solid var(--border); }
+  .swatch.on{ background:var(--accent); border-color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weekly Schedule Builder</h1>
+  <p class="subtitle">Click or drag across the grid to paint when the plug should be on. Each column is one weekday, each row is one hour.</p>
+
+  <div class="panel">
+    <p class="panel-title">Schedule grid</p>
+    <div class="grid-scroll">
+      <div class="grid-outer" id="grid"></div>
+    </div>
+    <div class="legend">
+      <span class="swatch on"></span> plug on
+      <span class="swatch" style="margin-left:14px"></span> plug off
+    </div>
+    <div class="row-actions">
+      <button id="clearBtn">Clear grid</button>
+      <button id="generateBtn" class="primary">Generate schedule string</button>
+    </div>
+    <p class="hint">Note: this grid only paints ranges within a single day. For a range that crosses midnight, generate first, then edit the text below by hand.</p>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Generated schedule string</p>
+    <textarea id="output" spellcheck="false" placeholder="Paint the grid above, then press &quot;Generate schedule string&quot;."></textarea>
+    <div class="row-actions">
+      <button id="copyBtn">Copy to clipboard</button>
+    </div>
+    <p class="status" id="copyStatus"></p>
+    <p class="hint">Paste this into the <b>WeeklySchedule</b> field on the plug's web UI, and set <b>TimerMode</b> to <b>Weekly</b>.</p>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Advanced: send directly to the plug</p>
+    <div class="field-row">
+      <input type="text" id="deviceIp" placeholder="Device IP, e.g. 192.168.1.50">
+      <button id="sendBtn">Send</button>
+    </div>
+    <p class="status" id="sendStatus"></p>
+    <p class="hint">This posts straight to the plug's <code>/text/weekly_schedule_text</code> endpoint. If the web UI has a login (digest auth) enabled, the browser may block this from a page hosted elsewhere — copy/paste above is the reliable fallback.</p>
+  </div>
+</div>
+
+<script>
+const DAY_TOKENS = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const HOURS = 24;
+
+const gridEl = document.getElementById('grid');
+const state = Array.from({length:7}, () => Array(HOURS).fill(false));
+
+function buildGrid(){
+  gridEl.innerHTML = '';
+  // top-left corner spacer
+  gridEl.appendChild(document.createElement('div'));
+  DAY_LABELS.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'day-label';
+    el.textContent = d;
+    gridEl.appendChild(el);
+  });
+  for (let h = 0; h < HOURS; h++){
+    const label = document.createElement('div');
+    label.className = 'hour-label';
+    label.textContent = String(h).padStart(2,'0') + ':00';
+    gridEl.appendChild(label);
+    for (let d = 0; d < 7; d++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.day = d;
+      cell.dataset.hour = h;
+      gridEl.appendChild(cell);
+    }
+  }
+}
+buildGrid();
+
+let painting = false;
+let paintValue = true;
+
+function setCell(cellEl, value){
+  const d = +cellEl.dataset.day, h = +cellEl.dataset.hour;
+  state[d][h] = value;
+  cellEl.classList.toggle('active', value);
+}
+
+gridEl.addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  painting = true;
+  paintValue = !cell.classList.contains('active');
+  setCell(cell, paintValue);
+  gridEl.setPointerCapture(e.pointerId);
+});
+
+gridEl.addEventListener('pointermove', e => {
+  if (!painting) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest('.cell');
+  if (cell) setCell(cell, paintValue);
+});
+
+['pointerup','pointercancel'].forEach(evt =>
+  gridEl.addEventListener(evt, () => { painting = false; })
+);
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  for (let d=0; d<7; d++) for (let h=0; h<HOURS; h++) state[d][h] = false;
+  gridEl.querySelectorAll('.cell.active').forEach(c => c.classList.remove('active'));
+  document.getElementById('output').value = '';
+});
+
+function generateSchedule(){
+  const runs = [];
+  for (let d=0; d<7; d++){
+    let h = 0;
+    while (h < HOURS){
+      if (state[d][h]){
+        const start = h;
+        while (h < HOURS && state[d][h]) h++;
+        runs.push({day:d, start, end:h});
+      } else {
+        h++;
+      }
+    }
+  }
+  const merged = new Map();
+  runs.forEach(r => {
+    const key = r.start + '-' + r.end;
+    if (!merged.has(key)) merged.set(key, new Set());
+    merged.get(key).add(r.day);
+  });
+  const entries = [];
+  for (const [key, days] of merged.entries()){
+    const [start, end] = key.split('-').map(Number);
+    const onStr = String(start).padStart(2,'0') + '00';
+    const offStr = String(end).padStart(2,'0') + '00';
+    const dayStr = Array.from(days).sort((a,b)=>a-b).map(d => DAY_TOKENS[d]).join('');
+    entries.push(onStr + '-' + offStr + ':' + dayStr);
+  }
+  return entries.join(';');
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  document.getElementById('output').value = generateSchedule();
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const out = document.getElementById('output');
+  const status = document.getElementById('copyStatus');
+  try {
+    await navigator.clipboard.writeText(out.value);
+    status.textContent = 'Copied to clipboard.';
+    status.className = 'status ok';
+  } catch (err) {
+    out.select();
+    status.textContent = 'Could not access clipboard automatically — text is selected, copy manually (Ctrl/Cmd+C).';
+    status.className = 'status err';
+  }
+});
+
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const ip = document.getElementById('deviceIp').value.trim();
+  const value = document.getElementById('output').value;
+  const status = document.getElementById('sendStatus');
+  if (!ip){
+    status.textContent = 'Enter the device IP first.';
+    status.className = 'status err';
+    return;
+  }
+  if (!value){
+    status.textContent = 'Generate a schedule string first.';
+    status.className = 'status err';
+    return;
+  }
+  status.textContent = 'Sending...';
+  status.className = 'status';
+  try {
+    await fetch('http://' + ip + '/text/weekly_schedule_text?value=' + encodeURIComponent(value), {
+      method: 'POST',
+      mode: 'no-cors'
+    });
+    status.textContent = 'Request sent (browser can\'t confirm success cross-origin — check the plug\'s WeeklySchedule field to verify).';
+    status.className = 'status ok';
+  } catch (err) {
+    status.textContent = 'Request failed: ' + err.message + '. Use copy/paste instead.';
+    status.className = 'status err';
+  }
+});
+</script>
+</body>
+</html>
