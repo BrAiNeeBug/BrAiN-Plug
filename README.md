@@ -8,7 +8,7 @@ ESPHome based smart plug firmware for ESP8266.
 
 BrAiNPlug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible ESP8266 smart plugs.
 
-The firmware is designed to work with Home Assistant through ESPHome and provides a local web interface for configuration, monitoring and control.
+The firmware is designed to work with Home Assistant through ESPHome and provides a local web interface.
 
 **🔗 [Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)** — paint your weekly ON/OFF schedule on a grid.
 
