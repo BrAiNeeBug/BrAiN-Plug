@@ -84,7 +84,45 @@ api:
 
 ---
 
-# Creating a Device Config
+# Installation
+
+## Requirements
+
+You need:
+
+* ESPHome installed (or the ESPHome Add-on inside Home Assistant)
+* An ESP8266 compatible smart plug
+* USB connection for the very first flash (not needed if the plug already runs Tasmota or any other OTA-capable firmware - see below)
+
+Install ESPHome via pip:
+
+```bash
+pip install esphome
+```
+
+Then clone this repository (needed for both options below, since it contains `base_brainplug.yaml`, `pwrmeter_brainplug.yaml` and the `brainplug-configs.nfo` examples):
+
+```bash
+git clone https://github.com/BrAiNeeBug/BrAiNPlug.git
+cd BrAiNPlug
+```
+
+Create your `secrets.yaml`:
+
+```yaml
+wifi_ssid: "YOUR_WIFI"
+wifi_password: "YOUR_PASSWORD"
+
+ota_password: "YOUR_OTA_PASSWORD"
+
+ap_password: "YOUR_FALLBACK_PASSWORD"
+
+webgui_password: "YOUR_WEB_PASSWORD"
+```
+
+---
+
+# Creating a Device Config & Flashing
 
 Each device gets its own small YAML file with just its `substitutions` and `packages` block, like the example above. Ready-made examples for all currently supported devices are collected in [`brainplug-configs.nfo`](brainplug-configs.nfo) - just copy the relevant block into a new file, e.g. `bsd33.yaml`.
 
@@ -107,81 +145,10 @@ esphome compile bsd33.yaml
 esphome run bsd33.yaml
 ```
 
----
-
-# Installation
-
-## Requirements
-
-You need:
-
-* ESPHome installed
-* USB connection for the first flash
-* ESP8266 compatible smart plug
-
-Install ESPHome:
-
-```bash
-pip install esphome
-```
-
-Alternatively, you can use the ESPHome Add-on inside Home Assistant.
-
----
-
-# First Flash
-
-Connect the ESP8266 device via USB.
-
-Clone the repository:
-
-```bash
-git clone https://github.com/BrAiNeeBug/BrAiNPlug.git
-
-cd BrAiNPlug
-```
-
-Create your `secrets.yaml`:
-
-```yaml
-wifi_ssid: "YOUR_WIFI"
-wifi_password: "YOUR_PASSWORD"
-
-ota_password: "YOUR_OTA_PASSWORD"
-
-ap_password: "YOUR_FALLBACK_PASSWORD"
-
-webgui_password: "YOUR_WEB_PASSWORD"
-```
-
-Compile the firmware (use your device's config file, e.g. `bsd33.yaml`):
-
-```bash
-esphome compile bsd33.yaml
-```
-
-Flash via USB:
-
-```bash
-esphome run bsd33.yaml
-```
-
-After the first installation, firmware updates can be performed over OTA.
+The first `run` needs either a USB connection or an existing OTA-capable firmware on the device; every run after that goes over OTA automatically.
 
 > **Already running Tasmota?**
 > If the plug is already flashed with Tasmota, you don't need a USB/serial connection at all. Just compile the firmware for your device (`esphome compile bsd33.yaml`), then upload the resulting `.bin` file directly through Tasmota's own web UI under **Firmware Upgrade -> Upload**. No need to open the case or solder anything.
-
----
-
-# OTA Update
-
-When the device is connected to WiFi:
-
-```bash
-esphome run bsd33.yaml
-```
-
-ESPHome automatically detects the device and uploads the new firmware.
 
 ---
 
