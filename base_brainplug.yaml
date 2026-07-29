@@ -1,4 +1,5 @@
 substitutions:
+  schedule_builder_url: "https://braineebug.github.io/BrAiNPlug/wsb.html"
   device_name: brainplug
   friendly_name: "pwrbase_brainplug"
   board_type: esp8266
@@ -7,7 +8,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.1.0
+  comment: BrAiN_Plug_1.1.5
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -64,6 +65,10 @@ globals:
     type: int
     restore_value: true
     initial_value: "0"
+  - id: weekly_status_str
+    type: std::string
+    restore_value: false
+    initial_value: '""'
 
 ota:
   - platform: esphome
@@ -98,6 +103,7 @@ select:
   - platform: logger
     name: "LogLevel"
     id: log_level_select
+    disabled_by_default: true
 
   - platform: template
     name: "PowerONMode"
@@ -127,6 +133,8 @@ select:
       - "OFF"
       - "Auto"
       - "Single"
+      - "WeeklyAuto"
+      - "WeeklySingle"
     initial_option: "OFF"
     on_value:
       then:
@@ -134,8 +142,22 @@ select:
             if (x == "OFF") id(timer_mode) = 0;
             else if (x == "Auto") id(timer_mode) = 1;
             else if (x == "Single") id(timer_mode) = 2;
+            else if (x == "WeeklyAuto") id(timer_mode) = 3;
+            else if (x == "WeeklySingle") id(timer_mode) = 4;
     web_server:
       sorting_weight: 3
+
+text:
+  - platform: template
+    name: "WeeklySchedule"
+    id: weekly_schedule_text
+    mode: text
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    max_length: 255
+    web_server:
+      sorting_weight: 20
 
 web_server:
   port: 80
@@ -176,53 +198,135 @@ interval:
           auto now = id(timesrc).now();
           if (!now.is_valid()) return;
 
-          auto on_t  = id(on_time_setting).state_as_esptime();
-          auto off_t = id(off_time_setting).state_as_esptime();
-
-          int now_min = now.hour * 60 + now.minute;
-          int on_min  = on_t.hour * 60 + on_t.minute;
-          int off_min = off_t.hour * 60 + off_t.minute;
-
-          if (on_min == off_min) {
-            // On-time equals off-time (e.g. 00:00-00:00) -> treat like TimerMode OFF, no switching
-            return;
-          }
-
-          bool should_be_on;
-
-          int duration = off_min - on_min;
-          if (duration <= 0) {
-            duration += 24 * 60;
-          }
-
-          int elapsed = now_min - on_min;
-          if (elapsed < 0) {
-            elapsed += 24 * 60;
-          }
-
-          should_be_on = (elapsed < duration);
-
           if (id(timer_mode) == 0) {
             // OFF
             return;
           }
 
-          if (id(timer_mode) == 1) {
-            // Auto
-            if (should_be_on)
-              id(relay).turn_on();
-            else
-              id(relay).turn_off();
-          } 
-          if (id(timer_mode) == 2) {
-            // Single
-            if (now.hour == on_t.hour && now.minute == on_t.minute && now.second < 10) {
-              id(relay).turn_on();
+          int now_min = now.hour * 60 + now.minute;
+
+          if (id(timer_mode) == 1 || id(timer_mode) == 2) {
+            // Auto / Single both use the global TurnOnTime / TurnOffTime fields
+            auto on_t  = id(on_time_setting).state_as_esptime();
+            auto off_t = id(off_time_setting).state_as_esptime();
+            int on_min  = on_t.hour * 60 + on_t.minute;
+            int off_min = off_t.hour * 60 + off_t.minute;
+
+            if (on_min == off_min) {
+              // On-time equals off-time (e.g. 00:00-00:00) -> nothing configured, no switching.
+              // NOTE: this short-circuit only applies to Auto/Single - Weekly mode below has
+              // its own per-entry times and must never be skipped because of this.
+              return;
             }
 
-            if (now.hour == off_t.hour && now.minute == off_t.minute && now.second < 10) {
-              id(relay).turn_off();
+            if (id(timer_mode) == 1) {
+              // Auto
+              int duration = off_min - on_min;
+              if (duration <= 0) {
+                duration += 24 * 60;
+              }
+
+              int elapsed = now_min - on_min;
+              if (elapsed < 0) {
+                elapsed += 24 * 60;
+              }
+
+              bool should_be_on = (elapsed < duration);
+
+              if (should_be_on)
+                id(relay).turn_on();
+              else
+                id(relay).turn_off();
+            } else {
+              // Single
+              if (now.hour == on_t.hour && now.minute == on_t.minute && now.second < 10) {
+                id(relay).turn_on();
+              }
+
+              if (now.hour == off_t.hour && now.minute == off_t.minute && now.second < 10) {
+                id(relay).turn_off();
+              }
             }
+          }
+
+          if (id(timer_mode) == 3 || id(timer_mode) == 4) {
+            // WeeklyAuto (3) / WeeklySingle (4): parse the free-form WeeklySchedule text field.
+            // Format: "HHMM-HHMM:Days;HHMM-HHMM:Days;..."
+            // Days = any combination of two-letter tokens Su Mo Tu We Th Fr Sa, no separator needed.
+            // Example: "0600-0800:MoTuWeThFr;1800-2200:SaSu;1200-1230:We"
+            // The SAME schedule text works for both modes - the TimerMode dropdown decides
+            // how it's applied:
+            //   WeeklyAuto   -> relay held ON continuously for the whole HHMM-HHMM range (classic behaviour)
+            //   WeeklySingle -> relay pulses ON once at the start time and OFF once at the end time,
+            //                   like TimerMode "Single", no continuous enforcement in between
+            // As many entries as fit in the text field (max_length below) - add/remove freely.
+            std::string sched = id(weekly_schedule_text).state;
+            const char *dow_tok_arr[] = {"", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"};
+            std::string dow_tok = dow_tok_arr[now.day_of_week];
+
+            bool should_be_on = false;
+            int matched_today = 0;
+            size_t pos = 0;
+            while (pos <= sched.size()) {
+              size_t sep = sched.find(';', pos);
+              std::string entry = (sep == std::string::npos) ? sched.substr(pos) : sched.substr(pos, sep - pos);
+              pos = (sep == std::string::npos) ? sched.size() + 1 : sep + 1;
+
+              while (!entry.empty() && entry.front() == ' ') entry.erase(entry.begin());
+              while (!entry.empty() && entry.back() == ' ') entry.pop_back();
+              if (entry.empty()) continue;
+
+              size_t colon = entry.find(':');
+              if (colon == std::string::npos) continue;
+              std::string range = entry.substr(0, colon);
+              std::string days = entry.substr(colon + 1);
+
+              size_t dash = range.find('-');
+              if (dash == std::string::npos) continue;
+              std::string on_str = range.substr(0, dash);
+              std::string off_str = range.substr(dash + 1);
+              if (on_str.size() != 4 || off_str.size() != 4) continue;
+              if (days.find(dow_tok) == std::string::npos) continue;
+
+              int e_on_min = std::stoi(on_str.substr(0, 2)) * 60 + std::stoi(on_str.substr(2, 2));
+              int e_off_min = std::stoi(off_str.substr(0, 2)) * 60 + std::stoi(off_str.substr(2, 2));
+              if (e_on_min == e_off_min) continue;
+
+              matched_today++;
+
+              if (id(timer_mode) == 4) {
+                // WeeklySingle: pulse only, no continuous enforcement
+                int e_on_hour = e_on_min / 60, e_on_minute = e_on_min % 60;
+                int e_off_hour = e_off_min / 60, e_off_minute = e_off_min % 60;
+
+                if (now.hour == e_on_hour && now.minute == e_on_minute && now.second < 10) {
+                  id(relay).turn_on();
+                }
+                if (now.hour == e_off_hour && now.minute == e_off_minute && now.second < 10) {
+                  id(relay).turn_off();
+                }
+              } else {
+                // WeeklyAuto: continuous range enforcement
+                int e_duration = e_off_min - e_on_min;
+                if (e_duration <= 0) e_duration += 24 * 60;
+                int e_elapsed = now_min - e_on_min;
+                if (e_elapsed < 0) e_elapsed += 24 * 60;
+
+                if (e_elapsed < e_duration) should_be_on = true;
+              }
+            }
+
+            if (id(timer_mode) == 3) {
+              // Only WeeklyAuto forces the relay every tick. WeeklySingle never does -
+              // it only fires the pulses above, so it never fights with itself 10s later.
+              if (should_be_on) id(relay).turn_on();
+              else id(relay).turn_off();
+            }
+
+            char status_buf[48];
+            snprintf(status_buf, sizeof(status_buf), "%d entries today, relay %s",
+                     matched_today, id(relay).state ? "ON" : "OFF");
+            id(weekly_status_str) = std::string(status_buf);
           }
 
   - interval: 500ms
@@ -239,6 +343,14 @@ interval:
           }
 
 text_sensor:
+  - platform: template
+    name: "ScheduleBuilderURL"
+    id: wsb
+    icon: mdi:web
+    entity_category: config
+    disabled_by_default: true
+    lambda: |-
+      return {"${schedule_builder_url}"};
   - platform: template
     name: "SystemClock"
     id: current_time_display
@@ -272,6 +384,15 @@ text_sensor:
       return std::string(buf);
     web_server:
       sorting_weight: 8
+
+  - platform: template
+    name: "WeeklyStatus"
+    id: weekly_status_display
+    update_interval: 10s
+    lambda: |-
+      return id(weekly_status_str);
+    web_server:
+      sorting_weight: 22
 
   - platform: template
     name: "TimerONDuration"
@@ -312,6 +433,7 @@ button:
     name: "Restart"
     device_class: restart
     entity_category: config
+    disabled_by_default: true
 
 #############################################
 ##########  Plug: Relay/Button/LED  ##########
