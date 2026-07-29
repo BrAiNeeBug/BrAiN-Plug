@@ -1,4 +1,5 @@
-# BrAiNPlug (Experimental Status! Please dont use! Use after i remove this line :) is working but buggy and AI is BrainFucking so pls Standby ♥
+# BrAiNPlug
+
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-BrAiNPub_OSO_FFA-green.svg)](https://bk-net.tk)
@@ -18,6 +19,8 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 * Persistent relay state handling
 * Power recovery modes
 * Daily ON/OFF timer scheduling with Auto and Single modes
+* Weekly schedule with WeeklyAuto and WeeklySingle modes
+* Web based Weekly Schedule Builder (grid painter, generates the schedule string)
 * Timer enable/disable
 * Runtime counter with power-loss recovery
 * Optional HLW8012 / BL0937 power monitoring
@@ -332,6 +335,8 @@ Relay turns off after boot.
 
 # Timer Modes
 
+The `TimerMode` selector offers five modes: `OFF`, `Auto`, `Single`, `WeeklyAuto` and `WeeklySingle`.
+
 ## OFF
 
 Timer functionality disabled.
@@ -340,7 +345,7 @@ Timer functionality disabled.
 
 ## Auto
 
-The firmware continuously checks the current time and enforces the correct relay state.
+The firmware continuously checks the current time and enforces the correct relay state, using the daily `TurnOnTime` / `TurnOffTime` fields.
 
 Example:
 
@@ -363,7 +368,7 @@ This mode is useful when the device loses power during an active timer period.
 
 ## Single
 
-The relay switches exactly at the configured ON and OFF times.
+The relay switches exactly at the configured ON and OFF times (`TurnOnTime` / `TurnOffTime`).
 
 Example:
 
@@ -378,6 +383,37 @@ Result:
 06:00 -> Relay ON
 22:00 -> Relay OFF
 ```
+
+---
+
+## Weekly Schedule (WeeklyAuto / WeeklySingle)
+
+Both weekly modes read the same `WeeklySchedule` text field, which holds one or more entries:
+
+```
+HHMM-HHMM:Days;HHMM-HHMM:Days;...
+```
+
+* `HHMM-HHMM` is the start and end time of a slot.
+* `Days` is any combination of the two-letter tokens `Su Mo Tu We Th Fr Sa`, no separator needed.
+
+Example:
+
+```
+0600-0800:MoTuWeThFr;1800-2200:SaSu;1200-1230:We
+```
+
+The easiest way to build this string is the web based **[Weekly Schedule Builder](wsb.html)**: paint the desired ON times on a day/hour grid and it generates the schedule string for you (paste it into the `WeeklySchedule` field, or send it directly to the plug's IP).
+
+The `TimerMode` dropdown decides *how* the schedule is applied - the text field itself doesn't need to change between the two modes:
+
+### WeeklyAuto
+
+The relay is held ON continuously for the whole duration of every matching slot, and forced OFF outside of them - the weekly equivalent of `Auto`. Survives reboots during an active slot, just like `Auto` does.
+
+### WeeklySingle
+
+The relay only pulses ON once at a slot's start time and OFF once at its end time - the weekly equivalent of `Single`. Between pulses the timer doesn't touch the relay, so it can be freely toggled by hand (button, web UI, Home Assistant) without being fought over.
 
 ---
 
@@ -440,7 +476,7 @@ Example:
 
 ## TimerONDuration
 
-Shows the calculated daily ON duration.
+Shows the calculated daily ON duration (`Auto` / `Single` modes).
 
 Example:
 
@@ -452,13 +488,31 @@ Example:
 
 ## TimerOFFDuration
 
-Shows the calculated daily OFF duration.
+Shows the calculated daily OFF duration (`Auto` / `Single` modes).
 
 Example:
 
 ```
 8.0h
 ```
+
+---
+
+## WeeklyStatus
+
+Shows how many entries of the `WeeklySchedule` match the current weekday, and the resulting relay state (`WeeklyAuto` / `WeeklySingle` modes).
+
+Example:
+
+```
+2 entries today, relay ON
+```
+
+---
+
+## WeeklyScheduleBuilder
+
+Shows the link to the web based Weekly Schedule Builder tool used to paint and generate the `WeeklySchedule` string.
 
 ---
 
@@ -517,7 +571,7 @@ Check:
 * WiFi connection
 * SNTP time synchronization
 * TimerMode is not set to OFF
-* Correct ON/OFF times
+* Correct ON/OFF times (`Auto` / `Single`) or a valid `WeeklySchedule` string (`WeeklyAuto` / `WeeklySingle`)
 
 ---
 
