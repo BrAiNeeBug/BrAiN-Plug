@@ -7,9 +7,10 @@ substitutions:
   relay_pin: GPIO0
   led_pin: GPIO0
   button_pin: GPIO0
+  localdomain: ".local"
 
 esphome:
-  comment: BrAiN_Plug_1.2.2
+  comment: BrAiN_Plug_1.2.3
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -83,7 +84,7 @@ wifi:
     password: !secret ap_password
     ap_timeout: 300s
   reboot_timeout: 0s
-  power_save_mode: LIGHT
+  power_save_mode: NONE #leave on NONE otherwise your plug will beep when relay is off :D
   domain: ${localdomain}
 
 #mqtt:
