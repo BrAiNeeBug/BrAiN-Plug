@@ -18,6 +18,7 @@ substitutions:
   cf1_pin: GPIO5
   voltage_divider: "1534"
   current_resistor: "0.000994"
+  power_multiply: "1.288"
 
 packages:
   base: !include base_brainplug.yaml
@@ -44,6 +45,7 @@ substitutions:
   cf1_pin: GPIO14
   voltage_divider: "2143"
   current_resistor: "0.001205"
+  power_multiply: "1.0"
 
 packages:
   base: !include base_brainplug.yaml
