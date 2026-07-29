@@ -19,6 +19,7 @@ substitutions:
   voltage_divider: "1534"
   current_resistor: "0.000994"
   power_multiply: "1.288"
+  localdomain: ".local"
 
 packages:
   base: !include base_brainplug.yaml
@@ -46,6 +47,7 @@ substitutions:
   voltage_divider: "2143"
   current_resistor: "0.001205"
   power_multiply: "1.0"
+  localdomain: ".local"
 
 packages:
   base: !include base_brainplug.yaml
@@ -67,6 +69,7 @@ substitutions:
   relay_pin: GPIO12
   led_pin: GPIO13
   button_pin: GPIO0
+  localdomain: ".local"
 
 packages:
   base: !include base_brainplug.yaml
