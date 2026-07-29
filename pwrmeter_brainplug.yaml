@@ -11,21 +11,21 @@ sensor:
     voltage:
       name: Voltage(V)
       web_server:
-        sorting_weight: 10
+        sorting_weight: 2
       icon: "mdi:sine-wave"
     current:
       name: Current(A)
       web_server:
-        sorting_weight: 11
+        sorting_weight: 3
       icon: "mdi:current-ac"
     power:
       name: Power(W)
       web_server:
-        sorting_weight: 12
+        sorting_weight: 4
       icon: "mdi:lightning-bolt"
     energy:
       name: TotalEnergy
       web_server:
-        sorting_weight: 13
+        sorting_weight: 5
       icon: "mdi:home-lightning-bolt"
     update_interval: 10s
