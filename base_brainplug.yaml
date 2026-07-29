@@ -1,14 +1,15 @@
 substitutions:
-  schedule_builder_url: "https://braineebug.github.io/BrAiNPlug/wsb.html"
   device_name: brainplug
   friendly_name: "pwrbase_brainplug"
+  giturl: "https://github.com/BrAiNeeBug/BrAiNPlug"
+  schedule_builder_url: "https://braineebug.github.io/BrAiNPlug/wsb.html"
   board_type: esp8266
   relay_pin: GPIO0
   led_pin: GPIO0
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.2.1
+  comment: BrAiN_Plug_1.2.2
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -83,7 +84,7 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  domain: .bk-net
+  domain: ${localdomain}
 
 #mqtt:
 #  broker: homeassistant.yourdomain
