@@ -127,19 +127,22 @@ ap_password: "YOUR_FALLBACK_PASSWORD"
 webgui_password: "YOUR_WEB_PASSWORD"
 ```
 
-Compile the firmware:
+Compile the firmware (use your device's config file, e.g. `bsd33.yaml`):
 
 ```bash
-esphome compile base_brainplug.yaml
+esphome compile bsd33.yaml
 ```
 
 Flash via USB:
 
 ```bash
-esphome run base_brainplug.yaml
+esphome run bsd33.yaml
 ```
 
 After the first installation, firmware updates can be performed over OTA.
+
+> **Already running Tasmota?**
+> If the plug is already flashed with Tasmota, you don't need a USB/serial connection at all. Just compile the firmware for your device (`esphome compile bsd33.yaml`), then upload the resulting `.bin` file directly through Tasmota's own web UI under **Firmware Upgrade -> Upload**. No need to open the case or solder anything.
 
 ---
 
@@ -148,7 +151,7 @@ After the first installation, firmware updates can be performed over OTA.
 When the device is connected to WiFi:
 
 ```bash
-esphome run base_brainplug.yaml
+esphome run bsd33.yaml
 ```
 
 ESPHome automatically detects the device and uploads the new firmware.
