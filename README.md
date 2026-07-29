@@ -1,11 +1,11 @@
-# BrAiN Plug
+# BrAiNPlug
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-BrAiNPub_OSO_FFA-green.svg)](https://bk-net.tk)
 
 ESPHome based smart plug firmware for ESP8266.
 
-BrAiN Plug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible ESP8266 smart plugs.
+BrAiNPlug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible ESP8266 smart plugs.
 
 The firmware is designed to work with Home Assistant through ESPHome and provides a local web interface for configuration, monitoring and control.
 
@@ -41,7 +41,7 @@ Adding support for additional ESP8266 based smart plugs is easy by creating a de
 
 # Hardware
 
-BrAiN Plug uses a modular ESPHome configuration.
+BrAiNPlug uses a modular ESPHome configuration.
 
 The device specific configuration contains the hardware pin definitions and loads the common firmware packages.
 
@@ -106,9 +106,9 @@ Connect the ESP8266 device via USB.
 Clone the repository:
 
 ```bash
-git clone https://github.com/BrAiNeeBug/BrAiN-Plug.git
+git clone https://github.com/BrAiNeeBug/BrAiNPlug.git
 
-cd BrAiN-Plug
+cd BrAiNPlug
 ```
 
 Create your `secrets.yaml`:
@@ -154,7 +154,7 @@ ESPHome automatically detects the device and uploads the new firmware.
 
 # Power Meter Configuration
 
-BrAiN Plug supports optional power measurement using the HLW8012 / BL0937 energy monitoring chip.
+BrAiNPlug supports optional power measurement using the HLW8012 / BL0937 energy monitoring chip.
 
 The power meter functionality is separated into an additional ESPHome package:
 
