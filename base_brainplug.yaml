@@ -8,7 +8,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.1.5
+  comment: BrAiN_Plug_1.1.7
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -83,7 +83,7 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  #domain: .yourdomain
+  domain: .bk-net
 
 #mqtt:
 #  broker: homeassistant.yourdomain
@@ -104,6 +104,7 @@ select:
     name: "LogLevel"
     id: log_level_select
     disabled_by_default: true
+    icon: "mdi:text-box-search-outline"
 
   - platform: template
     name: "PowerONMode"
@@ -124,6 +125,7 @@ select:
     web_server:
       sorting_weight: 2
 
+    icon: "mdi:cog-clockwise"
   - platform: template
     name: "TimerMode"
     id: timer_mode_select
@@ -147,6 +149,7 @@ select:
     web_server:
       sorting_weight: 3
 
+    icon: "mdi:timer-cog"
 text:
   - platform: template
     name: "WeeklySchedule"
@@ -156,6 +159,7 @@ text:
     restore_value: true
     initial_value: ""
     max_length: 255
+    icon: "mdi:calendar-clock"
     web_server:
       sorting_weight: 20
 
@@ -174,13 +178,14 @@ time:
 datetime:
   - platform: template
     type: TIME
-    name: "TurnOnTime"
+    name: "Turn0nTime"
     id: on_time_setting
     optimistic: true
     restore_value: true
     initial_value: "00:00:00"
     web_server:
       sorting_weight: 4
+    icon: "mdi:lightbulb-on"
   - platform: template
     type: TIME
     name: "TurnOffTime"
@@ -191,6 +196,7 @@ datetime:
     web_server:
       sorting_weight: 6
 
+    icon: "mdi:lightbulb-off"
 interval:
   - interval: 10s
     then:
@@ -346,7 +352,7 @@ text_sensor:
   - platform: template
     name: "ScheduleBuilderURL"
     id: wsb
-    icon: mdi:web
+    icon: "mdi:web"
     entity_category: config
     disabled_by_default: true
     lambda: |-
@@ -355,6 +361,7 @@ text_sensor:
     name: "SystemClock"
     id: current_time_display
     update_interval: 15s
+    icon: "mdi:clock-outline"
     lambda: |-
       auto now = id(timesrc).now();
       if (!now.is_valid()) return {"NA"};
@@ -385,9 +392,11 @@ text_sensor:
     web_server:
       sorting_weight: 8
 
+    icon: "mdi:run"
   - platform: template
     name: "WeeklyStatus"
     id: weekly_status_display
+    icon: "mdi:calendar-check-outline"
     update_interval: 10s
     lambda: |-
       return id(weekly_status_str);
@@ -395,7 +404,7 @@ text_sensor:
       sorting_weight: 22
 
   - platform: template
-    name: "TimerONDuration"
+    name: "Timer0NDuration"
     id: timer_on_duration_display
     update_interval: 30s
     lambda: |-
@@ -411,6 +420,7 @@ text_sensor:
     web_server:
       sorting_weight: 5
 
+    icon: "mdi:emoticon-cool"
   - platform: template
     name: "TimerOFFDuration"
     id: timer_off_duration_display
@@ -428,12 +438,14 @@ text_sensor:
     web_server:
       sorting_weight: 7
 
+    icon: "mdi:weather-night"
 button:
   - platform: restart
     name: "Restart"
     device_class: restart
     entity_category: config
     disabled_by_default: true
+    icon: "mdi:restart"
 
 #############################################
 ##########  Plug: Relay/Button/LED  ##########
@@ -455,6 +467,7 @@ switch:
     output: relay_out
     id: relay
     restore_mode: RESTORE_DEFAULT_OFF
+    icon: "mdi:power-socket-eu"
     on_turn_on:
       - lambda: |-
           id(relay_state) = 1;
@@ -495,6 +508,7 @@ binary_sensor:
       mode: INPUT_PULLUP
       inverted: true
     name: "Button"
+    icon: "mdi:gesture-tap-button"
     internal: true
     on_press:
       - switch.toggle: relay
