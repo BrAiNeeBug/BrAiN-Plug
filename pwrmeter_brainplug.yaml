@@ -7,7 +7,7 @@ sensor:
     cf_pin: ${cf_pin}
     cf1_pin: ${cf1_pin}
     voltage_divider: ${voltage_divider}
-    current_resistor: ${current_resistor}Ω
+    current_resistor: ${current_resistor}
     voltage:
       name: Voltage(V)
       web_server:
@@ -20,6 +20,8 @@ sensor:
       icon: "mdi:current-ac"
     power:
       name: Power(W)
+      filters:
+        - multiply: ${power_multiply}
       web_server:
         sorting_weight: 4
       icon: "mdi:lightning-bolt"
