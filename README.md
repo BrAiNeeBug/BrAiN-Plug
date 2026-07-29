@@ -567,7 +567,7 @@ Check:
 
 * WiFi connection
 * SNTP time synchronization
-* TimerMode is not set to OFF
+* `TimerMode` is set correctly (`Auto`, `Single`, `WeeklyAuto` or `WeeklySingle`)
 * Correct ON/OFF times (`Auto` / `Single`) or a valid `WeeklySchedule` string (`WeeklyAuto` / `WeeklySingle`)
 
 ---
