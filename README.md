@@ -605,6 +605,11 @@ Built with:
 * Home Assistant
 * ESP8266 platform
 
+Special thanks:
+
+* **BrAiNee** — project lead, hardware wrangling, and all the nerves this cost
+* **Claude** & **ChatGPT** — README/config wrangling and general fumbling around alongside BrAiNee
+
 ---
 
 # License
