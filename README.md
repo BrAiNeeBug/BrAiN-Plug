@@ -69,7 +69,7 @@ substitutions:
   voltage_divider: "1516"
   current_resistor: "0.001174"
   power_multiply: "1.288"
-  localdomain: ".bk-net"
+  localdomain: ".local"
 
 packages:
   base: !include base_brainplug.yaml
