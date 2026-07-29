@@ -8,7 +8,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.2.0
+  comment: BrAiN_Plug_1.2.1
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -83,7 +83,7 @@ wifi:
     ap_timeout: 300s
   reboot_timeout: 0s
   power_save_mode: LIGHT
-  #domain: .yourdomain
+  domain: .bk-net
 
 #mqtt:
 #  broker: homeassistant.yourdomain
@@ -358,7 +358,6 @@ text_sensor:
       char buf[9];
       snprintf(buf, sizeof(buf), "%02d:%02d:%02d", now.hour, now.minute, now.second);
       return std::string(buf);
-    device_class: timestamp
     entity_category: diagnostic
     disabled_by_default: true
   - platform: template
