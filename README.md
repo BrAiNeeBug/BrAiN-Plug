@@ -83,6 +83,7 @@ api:
 
 > GPIO assignments and calibration values depend on your hardware.
 > Always verify the pinout before flashing.
+> `localdomain` needs the leading dot (e.g. `.local`) - ESPHome hostnames can't contain one, so it has to be part of this value.
 
 ---
 
@@ -128,7 +129,7 @@ webgui_password: "YOUR_WEB_PASSWORD"
 
 Each device gets its own YAML configuration containing the required `substitutions`, `packages` and `api` sections.
 
-The example above shows the minimum required configuration for BrAiNPlug. Besides the hardware pin definitions, firmware substitutions such as `power_multiply` and `localdomain` are required.
+The example above shows the minimum required configuration for BrAiNPlug. Besides the hardware pin definitions, firmware substitutions such as `localdomain` are always required; `power_multiply` (and the other power calibration values) is only needed for devices that include the power meter package - the S-20 for example doesn't need it.
 
 Ready-made configurations for all currently supported devices are available in [`brainplug-configs.nfo`](https://github.com/BrAiNeeBug/BrAiNPlug/blob/main/brainplug-configs.nfo). Simply copy the configuration matching your device into a new YAML file (for example `bsd33.yaml`) and adjust the device-specific values as needed.
 
@@ -188,10 +189,12 @@ substitutions:
 
   voltage_divider: "1534"
   current_resistor: "0.000994"
+  power_multiply: "1.0"
 ```
 
 > Calibration values depend on the hardware design of the smart plug.
 > Different models may require different values.
+> `power_multiply` is an extra linear correction factor on top of the power reading (e.g. `1.05` = +5%) - use it for fine-tuning `Power(W)` against a reference meter once `voltage_divider`/`current_resistor` are already roughly calibrated. Leave it at `"1.0"` if no correction is needed.
 
 ---
 
@@ -269,24 +272,30 @@ sensor:
     voltage:
       name: Voltage(V)
       web_server:
-        sorting_weight: 10
+        sorting_weight: 2
+      icon: "mdi:sine-wave"
 
     current:
       name: Current(A)
       web_server:
-        sorting_weight: 11
+        sorting_weight: 3
+      icon: "mdi:current-ac"
 
     power:
       name: Power(W)
+      filters:
+        - multiply: ${power_multiply}
       web_server:
-        sorting_weight: 12
+        sorting_weight: 4
+      icon: "mdi:lightning-bolt"
 
     energy:
       name: TotalEnergy
       web_server:
-        sorting_weight: 13
+        sorting_weight: 5
+      icon: "mdi:home-lightning-bolt"
 
-    update_interval: 10s
+    update_interval: 5s
 ```
 
 ---
@@ -303,6 +312,7 @@ Typical calibration procedure:
 
    * `voltage_divider` for voltage accuracy
    * `current_resistor` for current accuracy
+   * `power_multiply` for a final fine-tune of the power reading
 4. Repeat until the values match.
 
 Example:
@@ -310,6 +320,7 @@ Example:
 ```yaml
 voltage_divider: "2050"
 current_resistor: "0.00121"
+power_multiply: "1.0"
 ```
 
 > Incorrect calibration can result in incorrect power and energy measurements.
