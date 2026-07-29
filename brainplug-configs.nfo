@@ -1,0 +1,75 @@
+########################################################
+# BrAiN_Plug ESPHome Device Configs
+# Kombinierte Übersicht der Substitutions/Device-Configs
+########################################################
+
+# =======================================================
+# bsd33.yaml
+# =======================================================
+substitutions:
+  device_name: bsd33
+  friendly_name: bsd33
+  board_type: esp8285
+  relay_pin: GPIO14
+  led_pin: GPIO13
+  button_pin: GPIO3
+  sel_pin: GPIO12
+  cf_pin: GPIO4
+  cf1_pin: GPIO5
+  voltage_divider: "1534"
+  current_resistor: "0.000994"
+
+packages:
+  base: !include base_brainplug.yaml
+  power: !include pwrmeter_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret bsd33__encryption_key
+  reboot_timeout: 0s
+
+
+# =======================================================
+# goklugeu3s.yaml
+# =======================================================
+substitutions:
+  device_name: goklugeu3s
+  friendly_name: goklugeu3s
+  board_type: esp01_1m
+  relay_pin: GPIO15
+  led_pin: GPIO2
+  button_pin: GPIO13
+  sel_pin: GPIO12
+  cf_pin: GPIO5
+  cf1_pin: GPIO14
+  voltage_divider: "2143"
+  current_resistor: "0.001205"
+
+packages:
+  base: !include base_brainplug.yaml
+  power: !include pwrmeter_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret goklugeu3s__encryption_key
+  reboot_timeout: 0s
+
+
+# =======================================================
+# sonoffs20.yaml
+# =======================================================
+substitutions:
+  device_name: sonoffs20
+  friendly_name: sonoffs20
+  board_type: esp01_1m
+  relay_pin: GPIO12
+  led_pin: GPIO13
+  button_pin: GPIO0
+
+packages:
+  base: !include base_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret sonoffs20__encryption_key
+  reboot_timeout: 0s
