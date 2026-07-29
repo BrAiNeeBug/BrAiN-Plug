@@ -28,4 +28,4 @@ sensor:
       web_server:
         sorting_weight: 5
       icon: "mdi:home-lightning-bolt"
-    update_interval: 10s
+    update_interval: 5s
