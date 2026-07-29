@@ -84,6 +84,31 @@ api:
 
 ---
 
+# Creating a Device Config
+
+Each device (a "Dose") gets its own small YAML file with just its `substitutions` and `packages` block, like the example above. Ready-made examples for all currently supported devices are collected in [`brainplug-configs.nfo`](brainplug-configs.nfo) - just copy the relevant block into a new file, e.g. `bsd33.yaml`.
+
+## Option A: Home Assistant ESPHome Add-on (recommended, GUI)
+
+This is how most people will do it:
+
+1. Open the **ESPHome** add-on/dashboard in Home Assistant.
+2. Click **New Device** -> **Continue** -> pick your board (e.g. ESP8266) -> give it a name.
+3. Once created, open the device's **Edit** view and replace the auto-generated YAML with your device config (copy the matching block from `brainplug-configs.nfo`, or adapt the BSD-33 example above).
+4. Make sure `secrets.yaml` (in the ESPHome add-on's config folder) contains your WiFi/OTA/webgui secrets.
+5. Click **Install** -> **Wirelessly** (if the device already has ESPHome/Tasmota/any OTA-capable firmware on it) or plug it in via USB the first time.
+
+## Option B: Command line (esphome CLI)
+
+For anyone not using Home Assistant, or scripting/CI setups:
+
+```bash
+esphome compile bsd33.yaml
+esphome run bsd33.yaml
+```
+
+---
+
 # Installation
 
 ## Requirements
