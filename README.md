@@ -86,7 +86,7 @@ api:
 
 # Creating a Device Config
 
-Each device (a "Dose") gets its own small YAML file with just its `substitutions` and `packages` block, like the example above. Ready-made examples for all currently supported devices are collected in [`brainplug-configs.nfo`](brainplug-configs.nfo) - just copy the relevant block into a new file, e.g. `bsd33.yaml`.
+Each device gets its own small YAML file with just its `substitutions` and `packages` block, like the example above. Ready-made examples for all currently supported devices are collected in [`brainplug-configs.nfo`](brainplug-configs.nfo) - just copy the relevant block into a new file, e.g. `bsd33.yaml`.
 
 ## Option A: Home Assistant ESPHome Add-on (recommended, GUI)
 
