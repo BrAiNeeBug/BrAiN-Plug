@@ -403,7 +403,7 @@ Example:
 0600-0800:MoTuWeThFr;1800-2200:SaSu;1200-1230:We
 ```
 
-The easiest way to build this string is the web based **[Weekly Schedule Builder](wsb.html)**: paint the desired ON times on a day/hour grid and it generates the schedule string for you (paste it into the `WeeklySchedule` field, or send it directly to the plug's IP).
+The easiest way to build this string is the web based **[Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)**: paint the desired ON times on a day/hour grid and it generates the schedule string for you (paste it into the `WeeklySchedule` field, or send it directly to the plug's IP).
 
 The `TimerMode` dropdown decides *how* the schedule is applied - the text field itself doesn't need to change between the two modes:
 
