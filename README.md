@@ -607,8 +607,7 @@ Built with:
 
 Special thanks:
 
-* **BrAiNee** — project lead, hardware wrangling, and all the nerves this cost
-* **Claude** & **ChatGPT** — README/config wrangling and general fumbling around alongside BrAiNee
+* **Claude** & **ChatGPT** — CODE/README/CONFIG
 
 ---
 
