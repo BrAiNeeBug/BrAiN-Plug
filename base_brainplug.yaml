@@ -8,7 +8,7 @@ substitutions:
   button_pin: GPIO0
 
 esphome:
-  comment: BrAiN_Plug_1.1.7
+  comment: BrAiN_Plug_1.1.8
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -360,7 +360,6 @@ text_sensor:
   - platform: template
     name: "SystemClock"
     id: current_time_display
-    update_interval: 15s
     icon: "mdi:clock-outline"
     lambda: |-
       auto now = id(timesrc).now();
@@ -374,7 +373,6 @@ text_sensor:
   - platform: template
     name: "ActualDuration"
     id: relay_duration_display
-    update_interval: 30s
     lambda: |-
       auto now = id(timesrc).now();
       if (!now.is_valid()) return {"NA"};
@@ -397,7 +395,6 @@ text_sensor:
     name: "WeeklyStatus"
     id: weekly_status_display
     icon: "mdi:calendar-check-outline"
-    update_interval: 10s
     lambda: |-
       return id(weekly_status_str);
     web_server:
@@ -406,7 +403,7 @@ text_sensor:
   - platform: template
     name: "Timer0NDuration"
     id: timer_on_duration_display
-    update_interval: 30s
+    update_interval: 5s
     lambda: |-
       auto on_t = id(on_time_setting).state_as_esptime();
       auto off_t = id(off_time_setting).state_as_esptime();
@@ -424,7 +421,7 @@ text_sensor:
   - platform: template
     name: "TimerOFFDuration"
     id: timer_off_duration_display
-    update_interval: 30s
+    update_interval: 5s
     lambda: |-
       auto on_t = id(on_time_setting).state_as_esptime();
       auto off_t = id(off_time_setting).state_as_esptime();
