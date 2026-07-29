@@ -1,4 +1,4 @@
-# BrAiNPlug
+# BrAiNPlug (Experimental Status! Please dont use! Use after i remove this line :) is worling but buggy and AI is BrainFucking me so pls Standyb ♥
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
 [![License](https://img.shields.io/badge/license-BrAiNPub_OSO_FFA-green.svg)](https://bk-net.tk)
