@@ -48,7 +48,7 @@ Adding support for additional ESP8266 based smart plugs is easy by creating a de
 
 BrAiNPlug uses a modular ESPHome configuration.
 
-The device specific configuration contains the hardware pin definitions and loads the common firmware packages.
+The device specific configuration contains the hardware pin definitions, firmware substitutions and loads the common firmware packages.
 
 ## Example configuration (BSD-33)
 
@@ -66,8 +66,10 @@ substitutions:
   cf_pin: GPIO4
   cf1_pin: GPIO5
 
-  voltage_divider: "1534"
-  current_resistor: "0.000994"
+  voltage_divider: "1516"
+  current_resistor: "0.001174"
+  power_multiply: "1.288"
+  localdomain: ".bk-net"
 
 packages:
   base: !include base_brainplug.yaml
@@ -79,7 +81,7 @@ api:
   reboot_timeout: 0s
 ```
 
-> GPIO assignments depend on your hardware.
+> GPIO assignments and calibration values depend on your hardware.
 > Always verify the pinout before flashing.
 
 ---
@@ -124,7 +126,11 @@ webgui_password: "YOUR_WEB_PASSWORD"
 
 # Creating a Device Config & Flashing
 
-Each device gets its own small YAML file with just its `substitutions` and `packages` block, like the example above. Ready-made examples for all currently supported devices are collected in [`brainplug-configs.nfo`](brainplug-configs.nfo) - just copy the relevant block into a new file, e.g. `bsd33.yaml`.
+Each device gets its own YAML configuration containing the required `substitutions`, `packages` and `api` sections.
+
+The example above shows the minimum required configuration for BrAiNPlug. Besides the hardware pin definitions, firmware substitutions such as `power_multiply` and `localdomain` are required.
+
+Ready-made configurations for all currently supported devices are available in [`brainplug-configs.nfo`](https://github.com/BrAiNeeBug/BrAiNPlug/blob/main/brainplug-configs.nfo). Simply copy the configuration matching your device into a new YAML file (for example `bsd33.yaml`) and adjust the device-specific values as needed.
 
 ## Option A: Home Assistant ESPHome Add-on (recommended, GUI)
 
