@@ -1,7 +1,7 @@
+#giturl: "https://github.com/BrAiNeeBug/BrAiNPlug"
 substitutions:
   device_name: brainplug
   friendly_name: "pwrbase_brainplug"
-  giturl: "https://github.com/BrAiNeeBug/BrAiNPlug"
   schedule_builder_url: "https://braineebug.github.io/BrAiNPlug/wsb.html"
   board_type: esp8266
   relay_pin: GPIO0
@@ -10,7 +10,7 @@ substitutions:
   localdomain: ".local"
 
 esphome:
-  comment: BrAiN_Plug_1.2.3
+  comment: BrAiN_Plug_1.2.4
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
