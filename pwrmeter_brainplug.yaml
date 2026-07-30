@@ -1,3 +1,15 @@
+#pwrmeter_brainplug for 1.2.4_pwrbase_brainplug
+
+globals:
+  - id: energy_raw_prev
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: energy_total
+    type: float
+    restore_value: true
+    initial_value: "0"
+
 sensor:
   - platform: hlw8012
     model: bl0937
@@ -26,8 +38,43 @@ sensor:
         sorting_weight: 4
       icon: "mdi:lightning-bolt"
     energy:
-      name: TotalEnergy
-      web_server:
-        sorting_weight: 5
-      icon: "mdi:home-lightning-bolt"
+      id: energy_raw
+      internal: true
+      # roher HLW8012-Zähler, startet bei jedem Boot wieder bei 0.
+      # Differenz seit letztem Update wird auf das persistente Global draufaddiert.
+      on_value:
+        then:
+          - lambda: |-
+              float delta = x - id(energy_raw_prev);
+              if (delta < 0) delta = 0;  // Sicherheitsnetz falls Reset/Reboot zwischen zwei Updates
+              id(energy_total) += delta;
+              id(energy_raw_prev) = x;
     update_interval: 5s
+
+  - platform: template
+    name: "TotalEnergy"
+    id: total_energy_display
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 3
+    update_interval: 5s
+    lambda: |-
+      return id(energy_total);
+    icon: "mdi:home-lightning-bolt"
+    web_server:
+      sorting_weight: 5
+
+button:
+  - platform: template
+    name: "ResetTotalEnergy"
+    id: reset_total_energy_button
+    icon: "mdi:restart-alert"
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          id(energy_total) = 0;
+          id(energy_raw_prev) = id(energy_raw).state;
+          global_preferences->sync();
+
+    disabled_by_default: true
