@@ -1,4 +1,4 @@
-# BrAiNPlug
+# BrAiNPlug (Alpha-Status use for testing only! updates, features daily!)
 
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
 [![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
