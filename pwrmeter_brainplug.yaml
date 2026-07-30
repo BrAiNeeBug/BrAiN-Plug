@@ -1,4 +1,4 @@
-#pwrmeter_brainplug for 1.2.4_pwrbase_brainplug
+#0.0.1_pwrmeter_brainplug for 1.2.4_pwrbase_brainplug
 
 globals:
   - id: energy_integration_prev
