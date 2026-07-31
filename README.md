@@ -24,8 +24,10 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 * Weekly schedule with WeeklyAuto and WeeklySingle modes
 * Web based Weekly Schedule Builder (grid painter, generates the schedule string)
 * Timer enable/disable
+* ChildLock - blocks manual relay switching via the physical button and the Home Assistant / web UI switch, without affecting the timer or the power-recovery restore behavior
 * Runtime counter with power-loss recovery
 * Optional HLW8012 / BL0937 power monitoring
+* Persistent TotalEnergy tracking with a ResetTotalEnergy button to zero the counter
 * Local ESPHome web interface
 * OTA firmware updates
 * No MQTT required
@@ -240,13 +242,15 @@ Example:
 
 ### TotalEnergy
 
-Shows accumulated energy consumption.
+Shows accumulated energy consumption, persisted across reboots.
 
 Example:
 
 ```
 12.45 kWh
 ```
+
+A config-category **ResetTotalEnergy** button is available next to the sensor to zero the counter (for example at the start of a new billing period), without affecting any other stored settings.
 
 ---
 
@@ -347,6 +351,26 @@ Relay turns off after boot.
 
 ---
 
+## ChildLock
+
+A config-category switch that blocks manual relay switching while active.
+
+When **ChildLock** is ON:
+
+* The physical button on the plug is ignored.
+* The `Switch` entity in Home Assistant / the web UI can no longer turn the relay on or off - toggling it just snaps back to the actual state.
+
+When **ChildLock** is OFF, the relay switches normally through button, Home Assistant and the web UI, same as without the feature.
+
+Importantly, ChildLock only affects *manual* switching. It never blocks:
+
+* The **Timer** (`Auto`, `Single`, `WeeklyAuto`, `WeeklySingle`) - schedules keep running exactly as configured.
+* The **Power Mode** restore behavior on reboot / after a power loss / after an OTA update.
+
+> **Tip:** if you're running `TimerMode: Auto` (or `WeeklyAuto`), turn **ChildLock ON** as well. That way nobody can accidentally flip the relay via the button or the app in the middle of an active ON/OFF window - the timer stays in full (100%) control of the relay, and will simply re-enforce the correct state on its next check either way.
+
+---
+
 # Timer Modes
 
 The `TimerMode` selector offers five modes: `OFF`, `Auto`, `Single`, `WeeklyAuto` and `WeeklySingle`.
@@ -377,6 +401,8 @@ After reboot:
 ```
 
 This mode is useful when the device loses power during an active timer period.
+
+> Combine this with **ChildLock ON** if you want the schedule to be the only thing controlling the relay - see the [ChildLock](#childlock) section above.
 
 ---
 
@@ -424,6 +450,8 @@ The `TimerMode` dropdown decides *how* the schedule is applied - the text field 
 ### WeeklyAuto
 
 The relay is held ON continuously for the whole duration of every matching slot, and forced OFF outside of them - the weekly equivalent of `Auto`. Survives reboots during an active slot, just like `Auto` does.
+
+> Just like `Auto`, combine this with **ChildLock ON** if you want the weekly schedule to be the only thing controlling the relay.
 
 ### WeeklySingle
 
@@ -535,6 +563,7 @@ Shows the link to the web based Weekly Schedule Builder tool used to paint and g
 The integrated ESPHome web server provides:
 
 * Relay control
+* ChildLock toggle
 * Timer configuration
 * Power mode selection
 * Runtime information
@@ -586,6 +615,7 @@ Check:
 * SNTP time synchronization
 * `TimerMode` is set correctly (`Auto`, `Single`, `WeeklyAuto` or `WeeklySingle`)
 * Correct ON/OFF times (`Auto` / `Single`) or a valid `WeeklySchedule` string (`WeeklyAuto` / `WeeklySingle`)
+* **ChildLock** is unrelated to this - it never blocks the timer, only manual button/app switching
 
 ---
 
