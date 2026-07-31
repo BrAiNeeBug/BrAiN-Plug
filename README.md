@@ -625,6 +625,7 @@ Built with:
 Special thanks:
 
 * **Claude** & **ChatGPT** — CODE/README/CONFIG
+* RIP Plugs: 1xEU3S(Bootloop)
 
 ---
 
