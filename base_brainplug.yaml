@@ -10,7 +10,7 @@ substitutions:
   localdomain: ".local"
 
 esphome:
-  comment: BrAiN_Plug_1.2.4
+  comment: BrAiN_Plug_1.3.0
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -18,16 +18,16 @@ esphome:
     then:
       - lambda: |-
           if (id(power_mode) == 1) {
-            if (!id(relay).state) id(relay).turn_on();
+            if (!id(relay_physical).state) id(relay_physical).turn_on();
           } else if (id(power_mode) == 2) {
-            if (id(relay).state) id(relay).turn_off();
+            if (id(relay_physical).state) id(relay_physical).turn_off();
           } else {
             // Last State: nicht auf ESPHomes impliziten restore_mode verlassen,
             // sondern explizit aus unserem eigenen Global setzen
             if (id(relay_state) == 1) {
-              if (!id(relay).state) id(relay).turn_on();
+              if (!id(relay_physical).state) id(relay_physical).turn_on();
             } else {
-              if (id(relay).state) id(relay).turn_off();
+              if (id(relay_physical).state) id(relay_physical).turn_off();
             }
           }
           uint32_t rtc_data[2];
@@ -233,17 +233,17 @@ interval:
               bool should_be_on = (elapsed < duration);
 
               if (should_be_on)
-                id(relay).turn_on();
+                id(relay_physical).turn_on();
               else
-                id(relay).turn_off();
+                id(relay_physical).turn_off();
             } else {
               // Single
               if (now.hour == on_t.hour && now.minute == on_t.minute && now.second < 10) {
-                id(relay).turn_on();
+                id(relay_physical).turn_on();
               }
 
               if (now.hour == off_t.hour && now.minute == off_t.minute && now.second < 10) {
-                id(relay).turn_off();
+                id(relay_physical).turn_off();
               }
             }
           }
@@ -299,10 +299,10 @@ interval:
                 int e_off_hour = e_off_min / 60, e_off_minute = e_off_min % 60;
 
                 if (now.hour == e_on_hour && now.minute == e_on_minute && now.second < 10) {
-                  id(relay).turn_on();
+                  id(relay_physical).turn_on();
                 }
                 if (now.hour == e_off_hour && now.minute == e_off_minute && now.second < 10) {
-                  id(relay).turn_off();
+                  id(relay_physical).turn_off();
                 }
               } else {
                 // WeeklyAuto: continuous range enforcement
@@ -318,13 +318,13 @@ interval:
             if (id(timer_mode) == 3) {
               // Only WeeklyAuto forces the relay every tick. WeeklySingle never does -
               // it only fires the pulses above, so it never fights with itself 10s later.
-              if (should_be_on) id(relay).turn_on();
-              else id(relay).turn_off();
+              if (should_be_on) id(relay_physical).turn_on();
+              else id(relay_physical).turn_off();
             }
 
             char status_buf[48];
             snprintf(status_buf, sizeof(status_buf), "%d entries today, relay %s",
-                     matched_today, id(relay).state ? "ON" : "OFF");
+                     matched_today, id(relay_physical).state ? "ON" : "OFF");
             id(weekly_status_str) = std::string(status_buf);
           }
 
@@ -337,7 +337,7 @@ interval:
             if (blink_state) id(led_out).turn_on();
             else id(led_out).turn_off();
           } else {
-            if (id(relay).state) id(led_out).turn_on();
+            if (id(relay_physical).state) id(led_out).turn_on();
             else id(led_out).turn_off();
           }
 
@@ -448,11 +448,11 @@ output:
 
 switch:
   - platform: output
-    name: "Switch"
+    name: "RelayPhysical"
     output: relay_out
-    id: relay
+    id: relay_physical
+    internal: true
     restore_mode: RESTORE_DEFAULT_OFF
-    icon: "mdi:power-socket-eu"
     on_turn_on:
       - lambda: |-
           id(relay_state) = 1;
@@ -468,6 +468,7 @@ switch:
             ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
           }
           global_preferences->sync();
+          id(relay).publish_state(true);
     on_turn_off:
       - lambda: |-
           id(relay_state) = 0;
@@ -483,8 +484,39 @@ switch:
             ESP.rtcUserMemoryWrite(0, rtc_data, sizeof(rtc_data));
           }
           global_preferences->sync();
+          id(relay).publish_state(false);
+  - platform: template
+    name: "Switch"
+    id: relay
+    restore_mode: DISABLED  # reiner Anzeige-/Gate-Layer, echter Zustand kommt von relay_physical
+    icon: "mdi:power-socket-eu"
+    turn_on_action:
+      - lambda: |-
+          if (id(child_lock).state) {
+            ESP_LOGW("childlock", "Turn ON blocked - ChildLock active");
+            id(relay).publish_state(id(relay_physical).state);
+          } else {
+            id(relay_physical).turn_on();
+          }
+    turn_off_action:
+      - lambda: |-
+          if (id(child_lock).state) {
+            ESP_LOGW("childlock", "Turn OFF blocked - ChildLock active");
+            id(relay).publish_state(id(relay_physical).state);
+          } else {
+            id(relay_physical).turn_off();
+          }
     web_server:
       sorting_weight: 1
+  - platform: template
+    name: "ChildLock"
+    id: child_lock
+    icon: "mdi:lock"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    web_server:
+      sorting_weight: 2
 binary_sensor:
   - platform: gpio
     pin:
@@ -495,4 +527,10 @@ binary_sensor:
     icon: "mdi:gesture-tap-button"
     internal: true
     on_press:
-      - switch.toggle: relay
+      - lambda: |-
+          if (id(child_lock).state) {
+            ESP_LOGW("childlock", "Button press blocked - ChildLock active");
+          } else {
+            if (id(relay_physical).state) id(relay_physical).turn_off();
+            else id(relay_physical).turn_on();
+          }
