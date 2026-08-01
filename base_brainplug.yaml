@@ -10,7 +10,7 @@ substitutions:
   localdomain: ".local"
 
 esphome:
-  comment: BrAiN_Plug_1.3.0
+  comment: BrAiN_Plug_1.3.1
   name: ${device_name}
   friendly_name: ${friendly_name}
   on_boot:
@@ -368,14 +368,16 @@ text_sensor:
     lambda: |-
       auto now = id(timesrc).now();
       if (!now.is_valid()) return {"NA"};
+
       int elapsed = (int) now.timestamp - id(last_switch_time);
 
       if (elapsed < 0 || elapsed > 315360000) {
-        elapsed = 0;
+        return std::string("PwrLoss");
       }
 
       int hours = elapsed / 3600;
       int minutes = (elapsed % 3600) / 60;
+
       char buf[16];
       snprintf(buf, sizeof(buf), "%dh %dm", hours, minutes);
       return std::string(buf);
