@@ -17,7 +17,7 @@ The firmware is designed to work with Home Assistant through ESPHome and provide
 # Features
 
 * ESPHome based firmware
-* ESP8266 / ESP8285 support
+* ESP8266 / ESP8285 / ESP32 support
 * Persistent relay state handling
 * Power recovery modes
 * Daily ON/OFF timer scheduling with Auto and Single modes
