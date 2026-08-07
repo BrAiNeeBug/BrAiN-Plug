@@ -6,7 +6,7 @@
 
 ESPHome based smart plug firmware for ESP8266 and ESP32.
 
-BrAiNPlug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible ESP8266 smart plugs.
+BrAiNPlug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible smart plugs.
 
 The firmware is designed to work with Home Assistant through ESPHome and provides a local web interface.
 
