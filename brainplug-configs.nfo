@@ -4,6 +4,34 @@
 ########################################################
 
 # =======================================================
+# nousa8t.yaml (NOUS A8T Plug ESP32) Needs SERIAL-FLASH!
+# =======================================================
+substitutions:
+  device_name: nousa8t1
+  friendly_name: nousa8t1
+  esp32_board: esp32dev
+  relay_pin: GPIO13
+  led_pin: GPIO02
+  button_pin: GPIO04
+  sel_pin: GPIO14
+  cf_pin: GPIO27
+  cf1_pin: GPIO26
+  voltage_divider: "1514"
+  current_resistor: "0.001271"
+  power_multiply: "1.310"
+  localdomain: ".local"
+
+packages:
+  base: !include base_brainplug_esp32.yaml
+  power: !include pwrmeter_brainplug.yaml
+
+api:
+  encryption:
+    key: !secret nous_a8t__encryption_key
+  reboot_timeout: 0s
+
+
+# =======================================================
 # bsd33.yaml
 # =======================================================
 substitutions:
