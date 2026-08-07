@@ -1,5 +1,5 @@
 #giturl: "https://github.com/BrAiNeeBug/BrAiNPlug"
-#0.0.1_base_brainplug_esp32 - ESP32-Port von base_brainplug.yaml (BrAiN_Plug_1.3.1)
+#base_brainplug_esp32 - ESP32-Port von base_brainplug.yaml (BrAiN_Plug_1.3.1)
 substitutions:
   device_name: brainplug
   friendly_name: "pwrbase_brainplug"
