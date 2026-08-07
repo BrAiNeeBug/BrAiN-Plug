@@ -41,6 +41,7 @@ Currently tested with:
 * S-20
 * BSD-33
 * EU3S
+* NOUS A8T
 
 Adding support for additional ESP8266 based smart plugs is easy by creating a device specific configuration.
 
