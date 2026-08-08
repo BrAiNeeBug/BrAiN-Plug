@@ -19,6 +19,7 @@ Paint your weekly ON/OFF schedule on a grid and generate the required `TimerConf
 
 - ESPHome based firmware
 - ESP8266 / ESP8285 / ESP32 support
+- Low-Power Consumption your Plug stays C☻☻L
 - Persistent relay state handling
 - Power recovery modes
 - Daily timer modes
