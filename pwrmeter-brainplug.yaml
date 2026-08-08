@@ -1,0 +1,93 @@
+#giturl: "https://github.com/BrAiNeeBug/BrAiNPlug"
+substitutions:
+  device_name: brainplug
+  friendly_name: "pwrmeter_brainplug"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+globals:
+  - id: energy_integration_prev
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: energy_total
+    type: float
+    restore_value: true
+    initial_value: "0"
+
+sensor:
+  - platform: hlw8012
+    model: bl0937
+    sel_pin:
+      number: ${sel_pin}
+      inverted: true
+    cf_pin: ${cf_pin}
+    cf1_pin: ${cf1_pin}
+    voltage_divider: ${voltage_divider}
+    current_resistor: ${current_resistor}
+    voltage:
+      name: Voltage(V)
+      web_server:
+        sorting_weight: 2
+      icon: "mdi:sine-wave"
+    current:
+      name: Current(A)
+      web_server:
+        sorting_weight: 3
+      icon: "mdi:current-ac"
+    power:
+      id: power_sensor
+      name: Power(W)
+      filters:
+        - multiply: ${power_multiply}
+      web_server:
+        sorting_weight: 4
+      icon: "mdi:lightning-bolt"
+    update_interval: 5s
+
+  - platform: integration
+    id: energy_integration
+    internal: true
+    sensor: power_sensor
+    time_unit: h
+    filters:
+      - multiply: 0.001  # Wh -> kWh
+    # kumulative Integration von Power(W) über die Zeit seit Boot (Trapezregel).
+    # Ersetzt den instabilen HLW8012-eigenen "energy"-Wert komplett.
+    on_value:
+      then:
+        - lambda: |-
+            float delta = x - id(energy_integration_prev);
+            if (delta < 0) delta = 0;  // Sicherheitsnetz falls Reset/Reboot zwischen zwei Updates
+            id(energy_total) += delta;
+            id(energy_integration_prev) = x;
+
+  - platform: template
+    name: "TotalEnergy"
+    id: total_energy_display
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 3
+    update_interval: 5s
+    lambda: |-
+      return id(energy_total);
+    icon: "mdi:home-lightning-bolt"
+    web_server:
+      sorting_weight: 5
+
+button:
+  - platform: template
+    name: "ResetTotalEnergy"
+    id: reset_total_energy_button
+    icon: "mdi:restart-alert"
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          id(energy_total) = 0;
+          id(energy_integration_prev) = id(energy_integration).state;
+          global_preferences->sync();
+
+    disabled_by_default: true
