@@ -54,13 +54,11 @@ sensor:
     time_unit: h
     filters:
       - multiply: 0.001  # Wh -> kWh
-    # kumulative Integration von Power(W) über die Zeit seit Boot (Trapezregel).
-    # Ersetzt den instabilen HLW8012-eigenen "energy"-Wert komplett.
     on_value:
       then:
         - lambda: |-
             float delta = x - id(energy_integration_prev);
-            if (delta < 0) delta = 0;  // Sicherheitsnetz falls Reset/Reboot zwischen zwei Updates
+            if (delta < 0) delta = 0;
             id(energy_total) += delta;
             id(energy_integration_prev) = x;
 
