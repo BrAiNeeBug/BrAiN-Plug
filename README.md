@@ -327,7 +327,8 @@ Replace `bsd33.yaml` with your actual device configuration.
 
 # Flashing from Tasmota
 
-If the smart plug already runs Tasmota and supports OTA firmware upload, a serial connection is normally not required.
+If the smart plug already runs Tasmota and supports OTA firmware upload, a serial connection is normally not required for ESP82x!
+On ESP32 you HAVE to use a serial connection with Factory-Image otherwise you will brik the Plug and following OTA-Updates!
 
 Compile the BrAiNPlug firmware:
 
