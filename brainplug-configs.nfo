@@ -22,8 +22,8 @@ substitutions:
   localdomain: ".local"
 
 packages:
-  base: !include base_brainplug_esp32.yaml
-  power: !include pwrmeter_brainplug.yaml
+  base: !include base-brainplug-esp32.yaml
+  power: !include pwrmeter-brainplug.yaml
 
 api:
   encryption:
@@ -50,8 +50,8 @@ substitutions:
   localdomain: ".local"
 
 packages:
-  base: !include base_brainplug.yaml
-  power: !include pwrmeter_brainplug.yaml
+  base: !include base-brainplug.yaml
+  power: !include pwrmeter-brainplug.yaml
 
 api:
   encryption:
@@ -78,8 +78,8 @@ substitutions:
   localdomain: ".local"
 
 packages:
-  base: !include base_brainplug.yaml
-  power: !include pwrmeter_brainplug.yaml
+  base: !include base-brainplug.yaml
+  power: !include pwrmeter-brainplug.yaml
 
 api:
   encryption:
@@ -100,7 +100,7 @@ substitutions:
   localdomain: ".local"
 
 packages:
-  base: !include base_brainplug.yaml
+  base: !include base-brainplug.yaml
 
 api:
   encryption:
