@@ -33,6 +33,7 @@ Paint your weekly ON/OFF schedule on a grid and generate the required `TimerConf
 - Optional HLW8012 / BL0937 power monitoring
 - Persistent `TotalEnergy` tracking
 - `ResetTotalEnergy` button
+- WiFi diagnostics (SSID, IP, signal strength)
 - Local ESPHome web interface
 - OTA firmware updates
 - No MQTT required
@@ -504,9 +505,9 @@ There are six available modes:
 
 ```text
 OFF
-Auto
-Single
-WeeklyAuto
+Daily
+DailySingle
+Weekly
 WeeklySingle
 Duration
 ```
@@ -524,9 +525,9 @@ The required format depends on the selected `TimerMode`.
 | TimerMode | TimerConf format |
 |---|---|
 | `OFF` | ignored |
-| `Auto` | `HH:MM:SS-HH:MM:SS` |
-| `Single` | `HH:MM:SS-HH:MM:SS` |
-| `WeeklyAuto` | `HHMM-HHMM:Days;...` |
+| `Daily` | `HH:MM:SS-HH:MM:SS` |
+| `DailySingle` | `HH:MM:SS-HH:MM:SS` |
+| `Weekly` | `HHMM-HHMM:Days;...` |
 | `WeeklySingle` | `HHMM-HHMM:Days;...` |
 | `Duration` | `HH:MM:SS/HH:MM:SS` |
 
@@ -540,14 +541,14 @@ The relay can be controlled manually through the button, Home Assistant or the w
 
 ---
 
-# Auto
+# Daily
 
-`Auto` continuously evaluates the current time and enforces the configured relay state.
+`Daily` continuously evaluates the current time and enforces the configured relay state.
 
 Example:
 
 ```text
-TimerMode: Auto
+TimerMode: Daily
 TimerConf: 06:00:00-22:00:00
 ```
 
@@ -562,18 +563,18 @@ After a reboot during the active period, the relay is brought back to the correc
 
 This is useful when the device loses power while a timer period is active.
 
-For timer-only operation, combine `Auto` with `ChildLock`.
+For timer-only operation, combine `Daily` with `ChildLock`.
 
 ---
 
-# Single
+# DailySingle
 
-`Single` switches the relay at the configured ON and OFF times.
+`DailySingle` switches the relay at the configured ON and OFF times.
 
 Example:
 
 ```text
-TimerMode: Single
+TimerMode: DailySingle
 TimerConf: 06:00:00-22:00:00
 ```
 
@@ -584,13 +585,13 @@ Result:
 22:00 -> OFF
 ```
 
-Unlike `Auto`, the relay is not continuously forced to the calculated state between the trigger times.
+Unlike `Daily`, the relay is not continuously forced to the calculated state between the trigger times.
 
 ---
 
-# WeeklyAuto
+# Weekly
 
-`WeeklyAuto` uses the same `TimerConf` field for a weekly schedule.
+`Weekly` uses the same `TimerConf` field for a weekly schedule.
 
 Format:
 
@@ -628,7 +629,7 @@ Thursday  06:00-08:00
 Friday    06:00-08:00
 ```
 
-`WeeklyAuto` continuously enforces the ON/OFF state for matching schedule entries.
+`Weekly` continuously enforces the ON/OFF state for matching schedule entries.
 
 The schedule survives a reboot during an active time slot.
 
@@ -636,7 +637,7 @@ The schedule survives a reboot during an active time slot.
 
 # WeeklySingle
 
-`WeeklySingle` uses exactly the same `TimerConf` format as `WeeklyAuto`.
+`WeeklySingle` uses exactly the same `TimerConf` format as `Weekly`.
 
 Example:
 
@@ -697,7 +698,7 @@ The easiest way to create a weekly schedule is the:
 The builder generates a `TimerConf` string suitable for:
 
 ```text
-WeeklyAuto
+Weekly
 ```
 
 or:
@@ -786,7 +787,7 @@ PwrLoss
 
 Displays the calculated ON duration.
 
-For `Auto` / `Single`, it is calculated from the daily `TimerConf`.
+For `Daily` / `DailySingle`, it is calculated from the daily `TimerConf`.
 
 For `Duration`, it displays the configured ON duration.
 
@@ -808,7 +809,7 @@ or:
 
 Displays the calculated OFF duration.
 
-For `Auto` / `Single`, it is calculated from the daily `TimerConf`.
+For `Daily` / `DailySingle`, it is calculated from the daily `TimerConf`.
 
 For `Duration`, it displays the configured OFF duration.
 
@@ -831,6 +832,22 @@ Example:
 Provides the URL of the Weekly Schedule Builder.
 
 It is disabled by default in the entity list.
+
+---
+
+## WiFiSSID / WiFiIP / WiFiSignal
+
+Diagnostic sensors for the current WiFi connection.
+
+```text
+WiFiSSID     -> connected network name
+WiFiIP       -> current IP address
+WiFiSignal   -> RSSI in dBm
+```
+
+All three are disabled by default in the entity list and can be enabled individually in Home Assistant if needed.
+
+`WiFiSignal` reports RSSI, not SNR — ESP8266/ESP32 don't expose the noise floor needed for a true SNR value.
 
 ---
 
@@ -906,12 +923,12 @@ Check:
 Examples:
 
 ```text
-Auto:
+Daily:
 06:00:00-22:00:00
 ```
 
 ```text
-WeeklyAuto:
+Weekly:
 0600-0800:MoTuWeThFr
 ```
 
