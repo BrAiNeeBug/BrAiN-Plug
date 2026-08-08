@@ -1,64 +1,144 @@
-# BrAiNPlug (Beta-Status use with care!)
+# BrAiNPlug (Beta-Status, use with care!)
 
 [![ESPHome](https://img.shields.io/badge/ESPHome-compatible-blue.svg)](https://esphome.io)
-[![Platform](https://img.shields.io/badge/platform-ESP8266-orange.svg)](https://www.espressif.com/en/products/socs/esp8266)
+[![Platform](https://img.shields.io/badge/platform-ESP8266%20%2F%20ESP32-orange.svg)](https://www.espressif.com/)
 [![License](https://img.shields.io/badge/license-BrAiNPub_OSO_FFA-green.svg)](https://bk-net.tk)
 
-ESPHome based smart plug firmware for ESP8266 and ESP32.
+ESPHome based smart plug firmware for **ESP8266 / ESP8285 and ESP32**.
 
-BrAiNPlug adds advanced timer handling, power recovery behavior and persistent runtime tracking to compatible smart plugs.
+BrAiNPlug adds advanced timer handling, power recovery behavior, persistent runtime tracking and optional power monitoring to compatible smart plugs.
 
 The firmware is designed to work with Home Assistant through ESPHome and provides a local web interface.
 
-**🔗 [Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)** — paint your weekly ON/OFF schedule on a grid.
+**🔗 [Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)**  
+Paint your weekly ON/OFF schedule on a grid and generate the required `TimerConf` string.
 
 ---
 
 # Features
 
-* ESPHome based firmware
-* ESP8266 / ESP8285 / ESP32 support
-* Persistent relay state handling
-* Power recovery modes
-* Daily ON/OFF timer scheduling with Auto and Single modes
-* Weekly schedule with WeeklyAuto and WeeklySingle modes
-* Web based Weekly Schedule Builder (grid painter, generates the schedule string)
-* Timer enable/disable
-* ChildLock - blocks manual relay switching via the physical button and the Home Assistant / web UI switch, without affecting the timer or the power-recovery restore behavior
-* Runtime counter with power-loss recovery
-* Optional HLW8012 / BL0937 power monitoring
-* Persistent TotalEnergy tracking with a ResetTotalEnergy button to zero the counter
-* Local ESPHome web interface
-* OTA firmware updates
-* No MQTT required
+- ESPHome based firmware
+- ESP8266 / ESP8285 / ESP32 support
+- Persistent relay state handling
+- Power recovery modes
+- Daily timer modes
+- Weekly timer modes
+- Duration timer with ON/OFF cycle times
+- One single `TimerConf` field for all timer configurations
+- Web based Weekly Schedule Builder
+- Timer enable/disable
+- ChildLock
+- Runtime counter with power-loss handling
+- Optional HLW8012 / BL0937 power monitoring
+- Persistent `TotalEnergy` tracking
+- `ResetTotalEnergy` button
+- Local ESPHome web interface
+- OTA firmware updates
+- No MQTT required
+
+---
+
+# Repository Structure
+
+The firmware is split into reusable ESPHome packages:
+
+```text
+BrAiNPlug/
+├── README.md
+├── base-brainplug.yaml
+├── base-brainplug-esp32.yaml
+├── pwrmeter-brainplug.yaml
+├── brainplug-configs.nfo
+└── wsb.html
+```
+
+### `base-brainplug.yaml`
+
+Main firmware package for **ESP8266 / ESP8285** devices.
+
+### `base-brainplug-esp32.yaml`
+
+Main firmware package for **ESP32** devices.
+
+### `pwrmeter-brainplug.yaml`
+
+Optional power-meter package for devices using an **HLW8012 / BL0937** compatible measurement circuit.
+
+### `brainplug-configs.nfo`
+
+Contains the device-specific configurations and pin/calibration values for supported plugs.
+
+### `wsb.html`
+
+Web based Weekly Schedule Builder.
 
 ---
 
 # Supported Devices
 
-Currently tested with:
+Currently configured/tested devices include:
 
-* S-20
-* BSD-33
-* EU3S
-* NOUS A8T
+- S-20
+- BSD-33
+- GoKlug EU3S
+- NOUS A8T
 
-Adding support for additional ESP8266 based smart plugs is easy by creating a device specific configuration.
+The NOUS A8T configuration uses the ESP32 base package.
+
+Additional ESPHome-based smart plugs can be supported by creating a device-specific configuration with the correct GPIO assignments and, if applicable, power-meter calibration values.
+
+**Always verify the hardware pinout before flashing.**
 
 ---
 
-# Hardware
+# Hardware Configuration
 
 BrAiNPlug uses a modular ESPHome configuration.
 
-The device specific configuration contains the hardware pin definitions, firmware substitutions and loads the common firmware packages.
+A device configuration defines the hardware-specific substitutions and includes the appropriate base package.
 
-## Example configuration (BSD-33)
+The current repository uses two different base packages:
+
+```yaml
+# ESP8266 / ESP8285
+packages:
+  base: !include base-brainplug.yaml
+```
+
+or:
+
+```yaml
+# ESP32
+packages:
+  base: !include base-brainplug-esp32.yaml
+```
+
+If the device has a power meter:
+
+```yaml
+packages:
+  base: !include base-brainplug.yaml
+  power: !include pwrmeter-brainplug.yaml
+```
+
+For ESP32:
+
+```yaml
+packages:
+  base: !include base-brainplug-esp32.yaml
+  power: !include pwrmeter-brainplug.yaml
+```
+
+---
+
+# Example: ESP8266 / ESP8285
+
+Example based on the BSD-33 configuration:
 
 ```yaml
 substitutions:
-  device_name: bsd331
-  friendly_name: bsd331
+  device_name: bsd33
+  friendly_name: bsd33
   board_type: esp8285
 
   relay_pin: GPIO14
@@ -69,24 +149,99 @@ substitutions:
   cf_pin: GPIO4
   cf1_pin: GPIO5
 
-  voltage_divider: "1516"
-  current_resistor: "0.001174"
+  voltage_divider: "1534"
+  current_resistor: "0.000994"
   power_multiply: "1.288"
+
   localdomain: ".local"
 
 packages:
-  base: !include base_brainplug.yaml
-  power: !include pwrmeter_brainplug.yaml
+  base: !include base-brainplug.yaml
+  power: !include pwrmeter-brainplug.yaml
 
 api:
   encryption:
-    key: !secret bsd331__encryption_key
+    key: !secret bsd33__encryption_key
   reboot_timeout: 0s
 ```
 
-> GPIO assignments and calibration values depend on your hardware.
-> Always verify the pinout before flashing.
-> `localdomain` needs the leading dot (e.g. `.local`) - ESPHome hostnames can't contain one, so it has to be part of this value.
+---
+
+# Example: ESP32
+
+Example based on the NOUS A8T configuration:
+
+```yaml
+substitutions:
+  device_name: nousa8t1
+  friendly_name: nousa8t1
+  esp32_board: esp32dev
+
+  relay_pin: GPIO13
+  led_pin: GPIO02
+  button_pin: GPIO04
+
+  sel_pin: GPIO14
+  cf_pin: GPIO27
+  cf1_pin: GPIO26
+
+  voltage_divider: "1514"
+  current_resistor: "0.001271"
+  power_multiply: "1.310"
+
+  localdomain: ".local"
+
+packages:
+  base: !include base-brainplug-esp32.yaml
+  power: !include pwrmeter-brainplug.yaml
+
+api:
+  encryption:
+    key: !secret nous_a8t__encryption_key
+  reboot_timeout: 0s
+```
+
+The exact GPIO assignments and calibration values depend on the hardware.
+
+---
+
+# Important Substitutions
+
+The following values are normally device-specific:
+
+```yaml
+device_name:
+friendly_name:
+board_type:       # ESP8266 / ESP8285
+esp32_board:      # ESP32
+relay_pin:
+led_pin:
+button_pin:
+localdomain:
+```
+
+For power-meter devices additionally:
+
+```yaml
+sel_pin:
+cf_pin:
+cf1_pin:
+voltage_divider:
+current_resistor:
+power_multiply:
+```
+
+`localdomain` needs the leading dot:
+
+```yaml
+localdomain: ".local"
+```
+
+or for another local DNS suffix:
+
+```yaml
+localdomain: ".bk-net"
+```
 
 ---
 
@@ -96,24 +251,18 @@ api:
 
 You need:
 
-* ESPHome installed (or the ESPHome Add-on inside Home Assistant)
-* An ESP8266 compatible smart plug
-* USB connection for the very first flash (not needed if the plug already runs Tasmota or any other OTA-capable firmware - see below)
+- ESPHome installed, or the ESPHome Add-on inside Home Assistant
+- A compatible ESP8266 / ESP8285 / ESP32 smart plug
+- USB/serial access for the first flash when the device does not already have an OTA-capable firmware
 
-Install ESPHome via pip:
-
-```bash
-pip install esphome
-```
-
-Then clone this repository (needed for both options below, since it contains `base_brainplug.yaml`, `pwrmeter_brainplug.yaml` and the `brainplug-configs.nfo` examples):
+Clone the repository:
 
 ```bash
 git clone https://github.com/BrAiNeeBug/BrAiNPlug.git
 cd BrAiNPlug
 ```
 
-Create your `secrets.yaml`:
+Create or update your `secrets.yaml`:
 
 ```yaml
 wifi_ssid: "YOUR_WIFI"
@@ -128,199 +277,107 @@ webgui_password: "YOUR_WEB_PASSWORD"
 
 ---
 
-# Creating a Device Config & Flashing
+# Creating a Device Configuration
 
-Each device gets its own YAML configuration containing the required `substitutions`, `packages` and `api` sections.
+The device-specific YAML contains:
 
-The example above shows the minimum required configuration for BrAiNPlug. Besides the hardware pin definitions, firmware substitutions such as `localdomain` are always required; `power_multiply` (and the other power calibration values) is only needed for devices that include the power meter package - the S-20 for example doesn't need it.
+1. Hardware substitutions
+2. The correct BrAiNPlug base package
+3. The optional power-meter package
+4. The ESPHome API configuration
 
-Ready-made configurations for all currently supported devices are available in [`brainplug-configs.nfo`](https://github.com/BrAiNeeBug/BrAiNPlug/blob/main/brainplug-configs.nfo). Simply copy the configuration matching your device into a new YAML file (for example `bsd33.yaml`) and adjust the device-specific values as needed.
+Ready-made configurations are available in:
 
-## Option A: Home Assistant ESPHome Add-on (recommended, GUI)
+```text
+brainplug-configs.nfo
+```
 
-This is how most people will do it:
+Copy the matching configuration into a new YAML file and adjust the values for your hardware.
 
-1. Open the **ESPHome** add-on/dashboard in Home Assistant.
-2. Click **New Device** -> **Continue** -> pick your board (e.g. ESP8266) -> give it a name.
-3. Once created, open the device's **Edit** view and replace the auto-generated YAML with your device config (copy the matching block from `brainplug-configs.nfo`, or adapt the BSD-33 example above).
-4. Make sure `secrets.yaml` (in the ESPHome add-on's config folder) contains your WiFi/OTA/webgui secrets.
-5. Click **Install** -> **Wirelessly** (if the device already has ESPHome/Tasmota/any OTA-capable firmware on it) or plug it in via USB the first time.
+---
 
-## Option B: Command line (esphome CLI)
+# Home Assistant ESPHome Add-on
 
-For anyone not using Home Assistant, or scripting/CI setups:
+This is the recommended way for Home Assistant users.
+
+1. Open the **ESPHome** dashboard.
+2. Create a new device.
+3. Select the correct ESP8266 or ESP32 board.
+4. Open the generated YAML.
+5. Replace it with the appropriate BrAiNPlug device configuration.
+6. Make sure the required secrets are available.
+7. Compile and install the firmware.
+
+If the device already runs ESPHome or another OTA-capable firmware, the firmware can normally be installed wirelessly.
+
+---
+
+# ESPHome CLI
+
+For command-line installations:
 
 ```bash
 esphome compile bsd33.yaml
 esphome run bsd33.yaml
 ```
 
-The first `run` needs either a USB connection or an existing OTA-capable firmware on the device; every run after that goes over OTA automatically.
-
-> **Already running Tasmota?**
-> If the plug is already flashed with Tasmota, you don't need a USB/serial connection at all. Just compile the firmware for your device (`esphome compile bsd33.yaml`), then upload the resulting `.bin` file directly through Tasmota's own web UI under **Firmware Upgrade -> Upload**. No need to open the case or solder anything.
+Replace `bsd33.yaml` with your actual device configuration.
 
 ---
 
-# Power Meter Configuration
+# Flashing from Tasmota
 
-BrAiNPlug supports optional power measurement using the HLW8012 / BL0937 energy monitoring chip.
+If the smart plug already runs Tasmota and supports OTA firmware upload, a serial connection is normally not required.
 
-The power meter functionality is separated into an additional ESPHome package:
+Compile the BrAiNPlug firmware:
 
+```bash
+esphome compile bsd33.yaml
 ```
-pwrmeter_brainplug.yaml
+
+Then upload the generated `.bin` file through the Tasmota web interface:
+
+```text
+Firmware Upgrade -> Upload
 ```
 
-To enable power measurement, include the package in your device configuration:
+The exact procedure depends on the Tasmota version and device.
+
+---
+
+# Power Meter
+
+BrAiNPlug supports optional power measurement using an HLW8012 / BL0937 compatible measurement circuit.
+
+Power monitoring is separated into:
+
+```text
+pwrmeter-brainplug.yaml
+```
+
+Enable it by adding:
 
 ```yaml
 packages:
-  base: !include base_brainplug.yaml
-  power: !include pwrmeter_brainplug.yaml
+  base: !include base-brainplug.yaml
+  power: !include pwrmeter-brainplug.yaml
 ```
 
-The required GPIO pins and calibration values must be defined in the device configuration.
-
-Example:
+For ESP32:
 
 ```yaml
-substitutions:
-  sel_pin: GPIO12
-  cf_pin: GPIO4
-  cf1_pin: GPIO5
-
-  voltage_divider: "1534"
-  current_resistor: "0.000994"
-  power_multiply: "1.0"
+packages:
+  base: !include base-brainplug-esp32.yaml
+  power: !include pwrmeter-brainplug.yaml
 ```
 
-> Calibration values depend on the hardware design of the smart plug.
-> Different models may require different values.
-> `power_multiply` is an extra linear correction factor on top of the power reading (e.g. `1.05` = +5%) - use it for fine-tuning `Power(W)` against a reference meter once `voltage_divider`/`current_resistor` are already roughly calibrated. Leave it at `"1.0"` if no correction is needed.
+The required GPIO pins and calibration values must be defined by the device configuration.
 
 ---
 
-## Available Power Sensors
+# Power Meter Calibration
 
-When enabled, the following sensors are available:
-
-### Voltage
-
-Shows the current mains voltage.
-
-Example:
-
-```
-230.5 V
-```
-
----
-
-### Current
-
-Shows the current load current.
-
-Example:
-
-```
-3.15 A
-```
-
----
-
-### Power
-
-Shows the current power consumption.
-
-Example:
-
-```
-725 W
-```
-
----
-
-### TotalEnergy
-
-Shows accumulated energy consumption, persisted across reboots.
-
-Example:
-
-```
-12.45 kWh
-```
-
-A config-category **ResetTotalEnergy** button is available next to the sensor to zero the counter (for example at the start of a new billing period), without affecting any other stored settings.
-
----
-
-## Power Meter Configuration Example
-
-`pwrmeter_brainplug.yaml`
-
-```yaml
-sensor:
-  - platform: hlw8012
-    model: bl0937
-
-    sel_pin:
-      number: ${sel_pin}
-      inverted: true
-
-    cf_pin: ${cf_pin}
-    cf1_pin: ${cf1_pin}
-
-    voltage_divider: ${voltage_divider}
-    current_resistor: ${current_resistor}
-
-    voltage:
-      name: Voltage(V)
-      web_server:
-        sorting_weight: 2
-      icon: "mdi:sine-wave"
-
-    current:
-      name: Current(A)
-      web_server:
-        sorting_weight: 3
-      icon: "mdi:current-ac"
-
-    power:
-      name: Power(W)
-      filters:
-        - multiply: ${power_multiply}
-      web_server:
-        sorting_weight: 4
-      icon: "mdi:lightning-bolt"
-
-    energy:
-      name: TotalEnergy
-      web_server:
-        sorting_weight: 5
-      icon: "mdi:home-lightning-bolt"
-
-    update_interval: 5s
-```
-
----
-
-## Power Meter Calibration
-
-The HLW8012 / BL0937 calibration values should be adjusted using a reliable multimeter or power meter.
-
-Typical calibration procedure:
-
-1. Connect a known load.
-2. Compare displayed voltage/current/power values.
-3. Adjust:
-
-   * `voltage_divider` for voltage accuracy
-   * `current_resistor` for current accuracy
-   * `power_multiply` for a final fine-tune of the power reading
-4. Repeat until the values match.
-
-Example:
+The following values are hardware-specific:
 
 ```yaml
 voltage_divider: "2050"
@@ -328,135 +385,332 @@ current_resistor: "0.00121"
 power_multiply: "1.0"
 ```
 
-> Incorrect calibration can result in incorrect power and energy measurements.
+Typical calibration procedure:
+
+1. Connect a known load.
+2. Compare the displayed voltage/current/power with a reliable reference meter.
+3. Adjust `voltage_divider` for voltage accuracy.
+4. Adjust `current_resistor` for current accuracy.
+5. Adjust `power_multiply` for final power fine-tuning.
+6. Repeat until the readings match.
+
+`power_multiply` is an additional linear correction factor.
+
+For example:
+
+```yaml
+power_multiply: "1.05"
+```
+
+adds approximately 5% to the calculated power value.
+
+Incorrect calibration can result in incorrect power and energy measurements.
+
+---
+
+# Available Power Sensors
+
+When the power-meter package is enabled:
+
+### Voltage
+
+Displays the current mains voltage.
+
+```text
+230.5 V
+```
+
+### Current
+
+Displays the current load.
+
+```text
+3.15 A
+```
+
+### Power
+
+Displays the current power consumption.
+
+```text
+725 W
+```
+
+### TotalEnergy
+
+Displays accumulated energy consumption in kWh.
+
+```text
+12.450 kWh
+```
+
+`TotalEnergy` is stored persistently.
+
+A `ResetTotalEnergy` button is available to reset the accumulated value.
 
 ---
 
 # Configuration
 
-## Power Mode
+## PowerONMode
 
-Controls the relay state after reboot.
+Controls the relay state after boot/reboot.
 
 ### Last State
 
-Restores the previous relay state.
+Restores the previously stored relay state.
 
 ### Always ON
 
-Relay turns on after boot.
+Turns the relay on after boot.
 
 ### Always OFF
 
-Relay turns off after boot.
+Turns the relay off after boot.
 
 ---
 
-## ChildLock
+# ChildLock
 
-A config-category switch that blocks manual relay switching while active.
+`ChildLock` blocks manual relay switching while enabled.
 
-When **ChildLock** is ON:
+When `ChildLock` is ON:
 
-* The physical button on the plug is ignored.
-* The `Switch` entity in Home Assistant / the web UI can no longer turn the relay on or off - toggling it just snaps back to the actual state.
+- The physical button is ignored.
+- The Home Assistant switch cannot manually change the relay.
+- The web interface switch cannot manually change the relay.
 
-When **ChildLock** is OFF, the relay switches normally through button, Home Assistant and the web UI, same as without the feature.
+The timer is **not** blocked by ChildLock.
 
-Importantly, ChildLock only affects *manual* switching. It never blocks:
+Power-recovery behavior is also not blocked.
 
-* The **Timer** (`Auto`, `Single`, `WeeklyAuto`, `WeeklySingle`) - schedules keep running exactly as configured.
-* The **Power Mode** restore behavior on reboot / after a power loss / after an OTA update.
-
-> **Tip:** if you're running `TimerMode: Auto` (or `WeeklyAuto`), turn **ChildLock ON** as well. That way nobody can accidentally flip the relay via the button or the app in the middle of an active ON/OFF window - the timer stays in full (100%) control of the relay, and will simply re-enforce the correct state on its next check either way.
+This makes ChildLock useful when the timer should have exclusive control over the relay.
 
 ---
 
-# Timer Modes
+# Timer System
 
-The `TimerMode` selector offers five modes: `OFF`, `Auto`, `Single`, `WeeklyAuto` and `WeeklySingle`.
+BrAiNPlug now uses **one single configuration field**:
 
-## OFF
+```text
+TimerConf
+```
 
-Timer functionality disabled.
+The selected `TimerMode` determines how this field is interpreted.
+
+There are six available modes:
+
+```text
+OFF
+Auto
+Single
+WeeklyAuto
+WeeklySingle
+Duration
+```
+
+The timer configuration is therefore no longer split into separate `TurnOnTime`, `TurnOffTime` and `WeeklySchedule` fields.
 
 ---
 
-## Auto
+# TimerConf
 
-The firmware continuously checks the current time and enforces the correct relay state, using the daily `TurnOnTime` / `TurnOffTime` fields.
+`TimerConf` is one text field.
+
+The required format depends on the selected `TimerMode`.
+
+| TimerMode | TimerConf format |
+|---|---|
+| `OFF` | ignored |
+| `Auto` | `HH:MM:SS-HH:MM:SS` |
+| `Single` | `HH:MM:SS-HH:MM:SS` |
+| `WeeklyAuto` | `HHMM-HHMM:Days;...` |
+| `WeeklySingle` | `HHMM-HHMM:Days;...` |
+| `Duration` | `HH:MM:SS/HH:MM:SS` |
+
+---
+
+# OFF
+
+Timer functionality is disabled.
+
+The relay can be controlled manually through the button, Home Assistant or the web interface, subject to ChildLock.
+
+---
+
+# Auto
+
+`Auto` continuously evaluates the current time and enforces the configured relay state.
 
 Example:
 
-```
-ON   06:00
-OFF  22:00
-```
-
-After reboot:
-
-```
-06:00 - 22:00 = Relay ON
-
-22:00 - 06:00 = Relay OFF
-```
-
-This mode is useful when the device loses power during an active timer period.
-
-> Combine this with **ChildLock ON** if you want the schedule to be the only thing controlling the relay - see the [ChildLock](#childlock) section above.
-
----
-
-## Single
-
-The relay switches exactly at the configured ON and OFF times (`TurnOnTime` / `TurnOffTime`).
-
-Example:
-
-```
-ON   06:00
-OFF  22:00
+```text
+TimerMode: Auto
+TimerConf: 06:00:00-22:00:00
 ```
 
 Result:
 
+```text
+06:00:00 -> ON
+22:00:00 -> OFF
 ```
-06:00 -> Relay ON
-22:00 -> Relay OFF
-```
+
+After a reboot during the active period, the relay is brought back to the correct state.
+
+This is useful when the device loses power while a timer period is active.
+
+For timer-only operation, combine `Auto` with `ChildLock`.
 
 ---
 
-## Weekly Schedule (WeeklyAuto / WeeklySingle)
+# Single
 
-Both weekly modes read the same `WeeklySchedule` text field, which holds one or more entries:
-
-```
-HHMM-HHMM:Days;HHMM-HHMM:Days;...
-```
-
-* `HHMM-HHMM` is the start and end time of a slot.
-* `Days` is any combination of the two-letter tokens `Su Mo Tu We Th Fr Sa`, no separator needed.
+`Single` switches the relay at the configured ON and OFF times.
 
 Example:
 
+```text
+TimerMode: Single
+TimerConf: 06:00:00-22:00:00
 ```
+
+Result:
+
+```text
+06:00 -> ON
+22:00 -> OFF
+```
+
+Unlike `Auto`, the relay is not continuously forced to the calculated state between the trigger times.
+
+---
+
+# WeeklyAuto
+
+`WeeklyAuto` uses the same `TimerConf` field for a weekly schedule.
+
+Format:
+
+```text
+HHMM-HHMM:Days;HHMM-HHMM:Days;...
+```
+
+Example:
+
+```text
 0600-0800:MoTuWeThFr;1800-2200:SaSu;1200-1230:We
 ```
 
-The easiest way to build this string is the web based **[Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)**: paint the desired ON times on a day/hour grid and it generates the schedule string for you (paste it into the `WeeklySchedule` field, or send it directly to the plug's IP).
+The day tokens are:
 
-The `TimerMode` dropdown decides *how* the schedule is applied - the text field itself doesn't need to change between the two modes:
+```text
+Su Mo Tu We Th Fr Sa
+```
 
-### WeeklyAuto
+No separator is required between day tokens.
 
-The relay is held ON continuously for the whole duration of every matching slot, and forced OFF outside of them - the weekly equivalent of `Auto`. Survives reboots during an active slot, just like `Auto` does.
+Example:
 
-> Just like `Auto`, combine this with **ChildLock ON** if you want the weekly schedule to be the only thing controlling the relay.
+```text
+0600-0800:MoTuWeThFr
+```
 
-### WeeklySingle
+means:
 
-The relay only pulses ON once at a slot's start time and OFF once at its end time - the weekly equivalent of `Single`. Between pulses the timer doesn't touch the relay, so it can be freely toggled by hand (button, web UI, Home Assistant) without being fought over.
+```text
+Monday    06:00-08:00
+Tuesday   06:00-08:00
+Wednesday 06:00-08:00
+Thursday  06:00-08:00
+Friday    06:00-08:00
+```
+
+`WeeklyAuto` continuously enforces the ON/OFF state for matching schedule entries.
+
+The schedule survives a reboot during an active time slot.
+
+---
+
+# WeeklySingle
+
+`WeeklySingle` uses exactly the same `TimerConf` format as `WeeklyAuto`.
+
+Example:
+
+```text
+TimerMode: WeeklySingle
+TimerConf: 0600-0800:MoTuWeThFr;1800-2200:SaSu
+```
+
+The relay receives an ON trigger at the start of a matching slot and an OFF trigger at the end.
+
+Between these trigger points the timer does not continuously enforce the relay state.
+
+This allows manual switching between scheduled events.
+
+---
+
+# Duration
+
+`Duration` uses the same single `TimerConf` field but interprets it as an ON/OFF cycle:
+
+```text
+HH:MM:SS/HH:MM:SS
+```
+
+The first value is the ON duration.
+
+The second value is the OFF duration.
+
+Example:
+
+```text
+TimerMode: Duration
+TimerConf: 00:00:10/00:00:05
+```
+
+Result:
+
+```text
+10 seconds ON
+5 seconds OFF
+10 seconds ON
+5 seconds OFF
+...
+```
+
+Duration mode is evaluated with 1-second resolution.
+
+This allows short ON/OFF cycles that are not possible with the normal daily/weekly timer modes.
+
+---
+
+# Weekly Schedule Builder
+
+The easiest way to create a weekly schedule is the:
+
+**[Weekly Schedule Builder](https://braineebug.github.io/BrAiNPlug/wsb.html)**
+
+The builder generates a `TimerConf` string suitable for:
+
+```text
+WeeklyAuto
+```
+
+or:
+
+```text
+WeeklySingle
+```
+
+Example output:
+
+```text
+0600-0800:MoTuWeThFr;1800-2200:SaSu
+```
+
+Copy the generated string into the `TimerConf` field.
 
 ---
 
@@ -464,30 +718,31 @@ The relay only pulses ON once at a slot's start time and OFF once at its end tim
 
 The sensor:
 
-```
+```text
 ActualDuration
 ```
 
-shows how long the relay has been in the current state.
+shows how long the relay has been in its current state.
 
-The timestamp is stored permanently:
+Example:
 
-```yaml
-last_switch_time:
-  restore_value: true
+```text
+2h 15m
 ```
 
-After a reboot the runtime information is restored when RTC memory is available.
+The runtime timestamp is stored persistently.
 
-After a complete power loss, runtime tracking starts again after the next relay state change.
+Relay state changes are immediately synchronized to preference storage to reduce the chance of losing the last change during an unexpected power loss.
 
-The firmware immediately saves relay changes:
+The ESP8266 implementation additionally uses RTC memory for runtime recovery.
 
-```cpp
-global_preferences->sync();
+On a complete power loss, `ActualDuration` reports:
+
+```text
+PwrLoss
 ```
 
-This prevents losing the last relay change during sudden power loss.
+until a new valid relay-state timestamp is available.
 
 ---
 
@@ -499,63 +754,81 @@ Displays the current ESP time.
 
 Example:
 
-```
+```text
 18:25:10
 ```
+
+A valid SNTP time source is required for timer operation.
 
 ---
 
 ## ActualDuration
 
-Shows the current relay runtime.
+Displays the runtime of the current relay state.
 
 Example:
 
-```
+```text
 2h 15m
+```
+
+After a detected power loss:
+
+```text
+PwrLoss
 ```
 
 ---
 
-## TimerONDuration
+## Timer0NDuration
 
-Shows the calculated daily ON duration (`Auto` / `Single` modes).
+Displays the calculated ON duration.
 
-Example:
+For `Auto` / `Single`, it is calculated from the daily `TimerConf`.
 
-```
+For `Duration`, it displays the configured ON duration.
+
+Examples:
+
+```text
 16.0h
+```
+
+or:
+
+```text
+10s
 ```
 
 ---
 
 ## TimerOFFDuration
 
-Shows the calculated daily OFF duration (`Auto` / `Single` modes).
+Displays the calculated OFF duration.
 
-Example:
+For `Auto` / `Single`, it is calculated from the daily `TimerConf`.
 
-```
-8.0h
-```
+For `Duration`, it displays the configured OFF duration.
 
 ---
 
 ## WeeklyStatus
 
-Shows how many entries of the `WeeklySchedule` match the current weekday, and the resulting relay state (`WeeklyAuto` / `WeeklySingle` modes).
+Displays information about matching weekly schedule entries and the resulting relay state.
 
 Example:
 
-```
+```text
 2 entries today, relay ON
 ```
 
 ---
 
-## WeeklyScheduleBuilder
+## ScheduleBuilderURL
 
-Shows the link to the web based Weekly Schedule Builder tool used to paint and generate the `WeeklySchedule` string.
+Provides the URL of the Weekly Schedule Builder.
+
+It is disabled by default in the entity list.
 
 ---
 
@@ -563,25 +836,28 @@ Shows the link to the web based Weekly Schedule Builder tool used to paint and g
 
 The integrated ESPHome web server provides:
 
-* Relay control
-* ChildLock toggle
-* Timer configuration
-* Power mode selection
-* Runtime information
-* Restart button
-* Logger settings
+- Relay control
+- ChildLock
+- TimerMode
+- TimerConf
+- PowerONMode
+- Runtime information
+- Restart
+- Logger settings
 
-Access:
+Access the web interface at:
 
-```
+```text
 http://DEVICE_IP
 ```
+
+The web interface is protected by the configured `webgui_password`.
 
 ---
 
 # Flash Wear Protection
 
-The firmware uses ESPHome preference storage.
+BrAiNPlug uses ESPHome preference storage.
 
 Recommended configuration:
 
@@ -590,9 +866,9 @@ preferences:
   flash_write_interval: 30s
 ```
 
-Normal ESPHome preference writes remain delayed.
+Normal preference writes remain delayed to reduce flash wear.
 
-The important runtime timestamp is stored immediately after relay changes to prevent losing runtime information after unexpected power loss.
+Important relay-state/runtime information is synchronized immediately after relay changes where required.
 
 ---
 
@@ -600,11 +876,17 @@ The important runtime timestamp is stored immediately after relay changes to pre
 
 ## Device does not boot
 
-Check GPIO0.
+Check the GPIO assignments.
 
-GPIO0 is also the ESP8266 boot mode pin.
+On ESP8266 devices, special attention must be paid to boot-strapping pins such as:
 
-Incorrect wiring can prevent normal startup.
+```text
+GPIO0
+```
+
+Incorrect wiring or an incorrect GPIO assignment can prevent normal startup.
+
+For ESP32 devices, verify the board definition and GPIO assignments for the specific hardware.
 
 ---
 
@@ -612,21 +894,39 @@ Incorrect wiring can prevent normal startup.
 
 Check:
 
-* WiFi connection
-* SNTP time synchronization
-* `TimerMode` is set correctly (`Auto`, `Single`, `WeeklyAuto` or `WeeklySingle`)
-* Correct ON/OFF times (`Auto` / `Single`) or a valid `WeeklySchedule` string (`WeeklyAuto` / `WeeklySingle`)
-* **ChildLock** is unrelated to this - it never blocks the timer, only manual button/app switching
+- WiFi connection
+- SNTP time synchronization
+- `TimerMode`
+- `TimerConf`
+- Correct `TimerConf` syntax for the selected mode
+- ChildLock is not blocking the timer
+
+Examples:
+
+```text
+Auto:
+06:00:00-22:00:00
+```
+
+```text
+WeeklyAuto:
+0600-0800:MoTuWeThFr
+```
+
+```text
+Duration:
+00:00:10/00:00:05
+```
 
 ---
 
-## ActualDuration shows NA
+## ActualDuration shows `NA`
 
 The device needs a valid time source.
 
 Wait until:
 
-```
+```text
 SystemClock
 ```
 
@@ -634,14 +934,44 @@ shows a valid time.
 
 ---
 
+## Power values are incorrect
+
+Check the hardware-specific:
+
+```yaml
+voltage_divider:
+current_resistor:
+power_multiply:
+```
+
+Calibration values from another plug should not automatically be copied to a different hardware design.
+
+---
+
 # Project Information
 
 Platform:
 
-```
+```text
 ESPHome
-ESP8266 / ESP8285
+ESP8266 / ESP8285 / ESP32
 ```
+
+Main firmware packages:
+
+```text
+base-brainplug.yaml
+base-brainplug-esp32.yaml
+pwrmeter-brainplug.yaml
+```
+
+Project:
+
+https://github.com/BrAiNeeBug/BrAiNPlug
+
+Weekly Schedule Builder:
+
+https://braineebug.github.io/BrAiNPlug/wsb.html
 
 ---
 
@@ -649,20 +979,20 @@ ESP8266 / ESP8285
 
 Built with:
 
-* ESPHome
-* Home Assistant
-* ESP8266 platform
+- ESPHome
+- Home Assistant
+- ESP8266 / ESP32 platforms
 
 Special thanks:
 
-* **Claude** & **ChatGPT** — CODE/README/CONFIG
-* RIP Plugs: 1xEU3S(Bootloop)
+- **Claude & ChatGPT** - CODE / README / CONFIG
+- RIP Plugs: 1x EU3S (Bootloop)
 
 ---
 
 # License
 
-```
+```text
 BrAiNPub_OSO_FFA
 
 (c)2026 by BrAiNee
